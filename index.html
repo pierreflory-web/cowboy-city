@@ -1,0 +1,2807 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta charset="utf-8">
+<title>La Traque de Mac Blain</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=Nunito:ital,wght@0,400;0,700;0,800;1,400&display=swap">
+<style>
+  :root{
+    --ink:#3B2417; --paper:#F4E4BE; --cream:#FBF0D8; --wood-dark:#7C4A24;
+    --red:#A63A2E; --gold:#E8A93F;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; height:100%; overflow:hidden; background:#F8A55B;
+    font-family:'Nunito',sans-serif; color:var(--ink); touch-action:none; user-select:none; -webkit-user-select:none}
+  .sign{font-family:'Rye',Georgia,serif}
+  .small-sign{font-family:'Nunito',sans-serif; font-weight:800}
+
+  #vp{position:fixed; inset:0; overflow:hidden; background:#FFE9B5}
+  #world{position:absolute; top:0; left:0; will-change:transform; display:block}
+
+  /* ---------- HUD ---------- */
+  .hud-btn{position:fixed; z-index:30; border:3px solid var(--ink); border-radius:14px;
+    background:var(--paper); color:var(--ink); font-family:'Nunito'; font-weight:800;
+    box-shadow:0 4px 0 rgba(59,36,23,.35); display:flex; align-items:center; justify-content:center}
+  .hud-btn:active{transform:translateY(3px); box-shadow:0 1px 0 rgba(59,36,23,.35)}
+  #btn-left{left:14px; bottom:16px; width:64px; height:64px; font-size:28px}
+  #btn-right{left:88px; bottom:16px; width:64px; height:64px; font-size:28px}
+  #btn-action{right:14px; bottom:16px; min-width:120px; height:64px; padding:0 18px;
+    background:var(--gold); font-size:17px; display:none}
+  #btn-action.show{display:flex}
+  #objective{position:fixed; top:10px; left:12px; z-index:30; background:rgba(244,228,190,.95);
+    border:2.5px solid var(--ink); border-radius:10px; padding:6px 12px; font-size:13.5px; font-weight:800;
+    max-width:62vw; box-shadow:0 3px 0 rgba(59,36,23,.3)}
+  #btn-carnet{top:10px; right:12px; width:54px; height:46px; font-size:20px; position:fixed}
+  #btn-music{top:64px; right:12px; width:54px; height:42px; font-size:18px; position:fixed}
+  #btn-aide{top:114px; right:12px; width:54px; height:42px; font-size:20px; position:fixed;
+    font-family:'Rye',Georgia,serif; color:var(--wood-dark)}
+  #carnet-badge{position:absolute; top:-8px; right:-8px; background:var(--red); color:var(--cream);
+    border:2px solid var(--ink); border-radius:99px; font-size:11px; min-width:20px; height:20px;
+    display:flex; align-items:center; justify-content:center; font-weight:800}
+
+  /* ---------- bulle de dialogue ---------- */
+  #dialog{position:fixed; left:50%; bottom:96px; transform:translateX(-50%); z-index:40;
+    width:min(560px, 92vw); background:var(--cream); border:3px solid var(--ink); border-radius:14px;
+    padding:12px 16px 10px; box-shadow:0 6px 0 rgba(59,36,23,.3); display:none}
+  #dialog.show{display:block}
+  #dialog .who{font-family:'Rye'; color:var(--red); font-size:15px; margin-bottom:2px}
+  #dialog .txt{font-size:15.5px; line-height:1.45}
+  #dialog .tap{font-size:11px; text-align:right; opacity:.55; margin-top:4px}
+
+  /* ---------- panneau carnet ---------- */
+  #carnet{position:fixed; inset:0; z-index:50; background:rgba(59,36,23,.45); display:none;
+    align-items:center; justify-content:center}
+  #carnet.show{display:flex}
+  #carnet .pad{width:min(480px,90vw); max-height:80vh; overflow:auto; background:var(--paper);
+    border:3px solid var(--ink); border-radius:12px; padding:18px 20px; box-shadow:0 8px 0 rgba(59,36,23,.35)}
+  #carnet h2{font-family:'Rye'; font-weight:400; margin:0 0 8px; color:var(--wood-dark)}
+  #carnet ul{margin:0; padding-left:20px}
+  #carnet li{margin:6px 0; font-size:15px}
+  #carnet .none{opacity:.6; font-style:italic}
+
+  /* ---------- écrans (intro / duel / victoire) ---------- */
+  .screen{position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center;
+    background:rgba(59,36,23,.55)}
+  .screen.show{display:flex}
+  .poster{width:min(440px,92vw); max-height:94vh; overflow:auto; background:var(--paper); border:4px solid var(--ink);
+    border-radius:10px; padding:20px 22px; text-align:center; box-shadow:0 10px 0 rgba(0,0,0,.3)}
+  .poster h1{font-family:'Rye'; font-weight:400; font-size:clamp(1.6rem,6vw,2.4rem); margin:.1em 0; color:var(--wood-dark)}
+  .poster .wanted{font-family:'Rye'; letter-spacing:.14em; color:var(--red); font-size:1.05rem}
+  .poster p{font-size:14.5px; line-height:1.5; margin:.6em 0}
+  .big-btn{font-family:'Nunito'; font-weight:800; font-size:19px; background:var(--gold); color:var(--ink);
+    border:3px solid var(--ink); border-radius:12px; padding:12px 34px; box-shadow:0 5px 0 rgba(59,36,23,.4); cursor:pointer}
+  .big-btn:active{transform:translateY(4px); box-shadow:0 1px 0 rgba(59,36,23,.4)}
+  #duel .poster{background:#3B2417; border-color:#E8A93F; color:var(--cream)}
+  #duel h1{color:var(--gold)}
+  #duel-bar{height:26px; border:3px solid var(--gold); border-radius:99px; overflow:hidden; background:#5A3418; margin:12px 0}
+  #duel-fill{height:100%; width:0%; background:linear-gradient(90deg,#E8A93F,#FFDD66)}
+  #btn-fire{font-size:24px; padding:18px 30px; width:100%; background:var(--red); color:var(--cream)}
+  #toast{position:fixed; top:64px; left:50%; transform:translateX(-50%); z-index:45; background:var(--ink);
+    color:var(--cream); border-radius:10px; padding:8px 16px; font-weight:800; font-size:14px; display:none;
+    max-width:88vw; text-align:center}
+  #rotate-hint{position:fixed; bottom:96px; left:50%; transform:translateX(-50%); z-index:20;
+    background:rgba(59,36,23,.85); color:var(--cream); padding:8px 14px; border-radius:10px; font-size:13px; display:none}
+
+  /* ---------- animations d'ambiance (validées en maquette) ---------- */
+  .tumbleweed{animation:roll 18s linear infinite}
+  @keyframes roll{0%{transform:translateX(-140px)}100%{transform:translateX(3140px)}}
+  .tumbleweed-inner{transform-box:fill-box; transform-origin:center; animation:spin 2.2s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .bunting{transform-box:fill-box; transform-origin:top center; animation:sway 5s ease-in-out infinite alternate}
+  .bunting.b2{animation-delay:-2.5s}
+  @keyframes sway{from{transform:skewX(-2deg)}to{transform:skewX(2deg)}}
+  .pendulum{transform-box:fill-box; transform-origin:top center; animation:tick 2s ease-in-out infinite alternate}
+  @keyframes tick{from{transform:rotate(-14deg)}to{transform:rotate(14deg)}}
+  .smoke{opacity:0; animation:puff 6s ease-out infinite}
+  .smoke.s2{animation-delay:2s}.smoke.s3{animation-delay:4s}
+  @keyframes puff{0%{opacity:0; transform:translate(0,0) scale(.6)}20%{opacity:.7}
+    100%{opacity:0; transform:translate(14px,-46px) scale(1.5)}}
+  .windmill{transform-box:fill-box; transform-origin:center; animation:spin 7s linear infinite}
+  .door-l{transform-box:fill-box; transform-origin:left center; animation:swingL 11s ease-in-out infinite}
+  .door-r{transform-box:fill-box; transform-origin:right center; animation:swingR 11s ease-in-out infinite}
+  @keyframes swingL{0%,79%,98%,100%{transform:scaleX(1)}83%,88%{transform:scaleX(.6)}93%{transform:scaleX(.88)}}
+  @keyframes swingR{0%,79%,98%,100%{transform:scaleX(1)}84%,89%{transform:scaleX(.6)}94%{transform:scaleX(.88)}}
+  .patron{opacity:0; animation:walkin 11s linear infinite}
+  @keyframes walkin{0%,52%{transform:translateX(110px); opacity:0}56%{opacity:1; transform:translateX(102px)}
+    80%{transform:translateX(0); opacity:1}84%,100%{opacity:0; transform:translateX(0)}}
+  .patron-legs{transform-box:fill-box; transform-origin:top center; animation:step .5s ease-in-out infinite alternate}
+  @keyframes step{from{transform:rotate(-5deg)}to{transform:rotate(5deg)}}
+  .horse-tail{transform-box:fill-box; transform-origin:top center; animation:swish 4s ease-in-out infinite alternate}
+  @keyframes swish{from{transform:rotate(-6deg)}to{transform:rotate(10deg)}}
+  .chicken{transform-box:fill-box; transform-origin:bottom center; animation:peck 2.6s ease-in-out infinite}
+  .chicken.c2{animation-delay:-1.2s}
+  @keyframes peck{0%,70%,100%{transform:rotate(0deg)}80%,90%{transform:rotate(14deg)}}
+  .girouette{transform-box:fill-box; transform-origin:bottom center; animation:girou 6s ease-in-out infinite alternate}
+  @keyframes girou{from{transform:rotate(-8deg)}to{transform:rotate(8deg)}}
+  .selfrock{transform-box:fill-box; transform-origin:bottom center; animation:rockchair 7s ease-in-out infinite}
+  @keyframes rockchair{0%,58%,100%{transform:rotate(0deg)}66%{transform:rotate(-4.5deg)}
+    74%{transform:rotate(3.5deg)}82%{transform:rotate(-2.5deg)}90%{transform:rotate(1.5deg)}}
+
+  /* marqueurs de fouille */
+  .spot-marker{transform-box:fill-box; transform-origin:center; animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{transform:scale(1); opacity:.85}50%{transform:scale(1.18); opacity:1}}
+
+  /* confettis de victoire */
+  #victory{overflow:hidden}
+  .confetti{position:absolute; top:-24px; width:10px; height:16px; border-radius:2px;
+    opacity:.95; animation:confall linear infinite}
+  @keyframes confall{
+    0%{transform:translateY(-6vh) rotate(0deg)}
+    100%{transform:translateY(112vh) rotate(720deg)}
+  }
+  @media (prefers-reduced-motion: reduce){ .confetti{display:none} }
+
+  /* tampon APPROVED qui claque sur l'affiche */
+  .stamp{transform-box:fill-box; transform-origin:center; animation:stampin .5s cubic-bezier(.2,1.6,.4,1) .5s backwards}
+  @keyframes stampin{0%{transform:scale(2.6); opacity:0}70%{transform:scale(.94); opacity:1}100%{transform:scale(1)}}
+  @media (prefers-reduced-motion: reduce){ .stamp{animation:none} }
+
+  /* fondu de transition (portes) */
+  #fader{position:fixed; inset:0; background:#3B2417; opacity:0; pointer-events:none;
+    transition:opacity .28s; z-index:55}
+  #fader.show{opacity:1}
+
+  /* PNJ qui se promènent */
+  .walker .leg-l,.walker .leg-r{transform-box:fill-box; transform-origin:top center}
+  .walker.walking .leg-l{animation:step .45s ease-in-out infinite alternate}
+  .walker.walking .leg-r{animation:step .45s ease-in-out infinite alternate-reverse}
+  .walker.walking .body-rock{transform-box:fill-box; transform-origin:bottom center;
+    animation:rock .45s ease-in-out infinite alternate}
+  @keyframes rock{from{transform:rotate(-1.6deg) translateY(0)}to{transform:rotate(1.6deg) translateY(-2px)}}
+  .dolly-wave{transform-box:fill-box; transform-origin:bottom left; animation:wave 1.8s ease-in-out infinite alternate}
+  @keyframes wave{from{transform:rotate(-12deg)}to{transform:rotate(6deg)}}
+  .dolly-polish{transform-box:fill-box; transform-origin:top left; animation:polish 1.2s ease-in-out infinite alternate}
+  @keyframes polish{from{transform:rotate(-6deg)}to{transform:rotate(8deg)}}
+
+  /* marche du joueur */
+  #player .leg-l,#player .leg-r{transform-box:fill-box; transform-origin:top center}
+  #player.walking .leg-l{animation:step .32s ease-in-out infinite alternate}
+  #player.walking .leg-r{animation:step .32s ease-in-out infinite alternate-reverse}
+  #player.walking .torso{transform-box:fill-box; transform-origin:bottom center; animation:bob .32s ease-in-out infinite alternate}
+  @keyframes bob{from{transform:translateY(0)}to{transform:translateY(-2.5px)}}
+  #macblain .leg-l{transform-box:fill-box; transform-origin:top center; animation:step .22s ease-in-out infinite alternate}
+  #macblain .leg-r{transform-box:fill-box; transform-origin:top center; animation:step .22s ease-in-out infinite alternate-reverse}
+  #macblain.standing .leg-l,#macblain.standing .leg-r{animation:none}
+
+  @media (prefers-reduced-motion: reduce){
+    .tumbleweed,.tumbleweed-inner,.bunting,.pendulum,.smoke,.windmill,.door-l,.door-r,
+    .horse-tail,.chicken,.patron,.patron-legs,.spot-marker,.girouette,
+    .walker .leg-l,.walker .leg-r,.walker .body-rock,.dolly-wave,.dolly-polish{animation:none}
+    .smoke{opacity:.5}
+  }
+</style>
+</head>
+<body>
+
+
+<div id="vp">
+<svg id="world" viewBox="0 0 7460 640" width="7460" height="640" aria-label="Cowboy City">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE9B5"/><stop offset=".55" stop-color="#FFD98E"/>
+      <stop offset="1" stop-color="#F8A55B"/>
+    </linearGradient>
+    <linearGradient id="street" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D9A464"/><stop offset="1" stop-color="#C68E4E"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ciel sur tout le monde -->
+  <rect x="0" y="0" width="3000" height="460" fill="url(#sky)"/>
+  <circle cx="1900" cy="110" r="52" fill="#FFDD66" stroke="#E8A93F" stroke-width="2.2"/>
+  <g fill="#FFF4DA" stroke="#E8C687" stroke-width="1.4">
+    <g><ellipse cx="180" cy="86" rx="52" ry="20"/><ellipse cx="222" cy="72" rx="34" ry="16"/><ellipse cx="142" cy="74" rx="28" ry="14"/></g>
+    <g><ellipse cx="1120" cy="60" rx="44" ry="16"/><ellipse cx="1156" cy="48" rx="26" ry="12"/></g>
+    <g><ellipse cx="700" cy="128" rx="30" ry="11"/><ellipse cx="726" cy="120" rx="18" ry="8"/></g>
+    <ellipse cx="1570" cy="76" rx="34" ry="12"/>
+    <g><ellipse cx="2280" cy="90" rx="46" ry="17"/><ellipse cx="2320" cy="76" rx="28" ry="13"/></g>
+    <ellipse cx="2700" cy="60" rx="36" ry="13"/>
+  </g>
+  <g fill="none" stroke="#7C4A24" stroke-width="2.2" stroke-linecap="round">
+    <path d="M 1240 110 q 12 -12 24 0 q 12 -12 24 0"/>
+    <path d="M 788 84 q 9 -9 18 0 q 9 -9 18 0" stroke-width="1.4"/>
+    <path d="M 2450 120 q 10 -10 20 0 q 10 -10 20 0" stroke-width="1.4"/>
+  </g>
+
+  <!-- mesas : ouest, fond de ville, est -->
+  <g fill="#DE9463" stroke="#C9713F" stroke-width="1.4">
+    <path d="M -10 330 L 60 330 L 85 240 L 190 240 L 215 330 L 330 330 L 330 460 L -10 460 Z"/>
+    <path d="M 1370 330 L 1430 330 L 1445 236 L 1540 236 L 1555 330 L 1690 330 L 1690 460 L 1370 460 Z"/>
+    <path d="M 2620 330 L 2690 330 L 2715 228 L 2830 228 L 2855 330 L 3010 330 L 3010 460 L 2620 460 Z"/>
+  </g>
+  <g fill="#C9713F" stroke="#A85A31" stroke-width="1.4">
+    <path d="M 780 380 L 820 380 L 832 320 L 900 320 L 912 380 L 950 380 L 950 460 L 780 460 Z" opacity=".8"/>
+    <path d="M 2380 390 L 2420 390 L 2434 336 L 2500 336 L 2514 390 L 2550 390 L 2550 460 L 2380 460 Z" opacity=".8"/>
+  </g>
+  <g stroke="#C9713F" stroke-width="1" opacity=".6">
+    <line x1="90" y1="272" x2="186" y2="272"/><line x1="80" y1="300" x2="196" y2="300"/>
+    <line x1="1448" y1="266" x2="1537" y2="266"/><line x1="1440" y1="296" x2="1546" y2="296"/>
+    <line x1="2722" y1="262" x2="2826" y2="262"/><line x1="2710" y1="296" x2="2840" y2="296"/>
+  </g>
+
+  <!-- sol / rue sur tout le monde -->
+  <rect x="0" y="440" width="3000" height="200" fill="url(#street)"/>
+  <path d="M 60 640 C 500 560 1300 560 2000 600 S 2900 620 2990 606" fill="none" stroke="#BC8449" stroke-width="9" stroke-linecap="round"/>
+  <path d="M 20 610 C 500 530 1400 535 2100 566 S 2920 588 2995 572" fill="none" stroke="#BC8449" stroke-width="9" stroke-linecap="round"/>
+  <g fill="#BC8449">
+    <ellipse cx="160" cy="590" rx="14" ry="6"/><ellipse cx="1510" cy="620" rx="18" ry="7"/>
+    <ellipse cx="1070" cy="628" rx="12" ry="5"/><ellipse cx="900" cy="618" rx="9" ry="4"/>
+    <ellipse cx="1240" cy="632" rx="10" ry="4"/><ellipse cx="60" cy="560" rx="8" ry="4"/>
+    <ellipse cx="1900" cy="600" rx="15" ry="6"/><ellipse cx="2340" cy="625" rx="12" ry="5"/>
+    <ellipse cx="2680" cy="590" rx="14" ry="6"/><ellipse cx="2170" cy="565" rx="9" ry="4"/>
+  </g>
+  <g stroke="#C68E4E" stroke-width="1.4" stroke-linecap="round" opacity=".8">
+    <path d="M 820 560 l 16 2 M 980 545 l 14 2 M 1340 585 l 16 2 M 1570 555 l 12 2 M 690 630 l 18 2"/>
+    <path d="M 2050 580 l 16 2 M 2420 555 l 14 2 M 2760 615 l 16 2 M 340 585 l 14 2"/>
+  </g>
+  <g stroke="#8F9A4B" stroke-width="1.4" fill="none" stroke-linecap="round">
+    <path d="M 730 606 q 2 -14 -4 -20 M 736 606 q 0 -12 8 -18 M 742 606 q 4 -10 -2 -16"/>
+    <path d="M 1420 596 q 2 -14 -4 -20 M 1426 596 q 0 -12 8 -18"/>
+    <path d="M 928 632 q 2 -12 -4 -17 M 934 632 q 0 -10 7 -15"/>
+    <path d="M 2240 610 q 2 -14 -4 -20 M 2246 610 q 0 -12 8 -18"/>
+    <path d="M 350 570 q 2 -12 -4 -17 M 356 570 q 0 -10 7 -15"/>
+  </g>
+  <!-- fer à cheval + crâne de vache -->
+  <g transform="translate(1080,585) rotate(24)" fill="none" stroke="#8C8C8C" stroke-width="2.2" stroke-linecap="round">
+    <path d="M -7 6 A 8.5 8.5 0 1 1 7 6"/>
+  </g>
+  <g transform="translate(1120,620)">
+    <ellipse cx="0" cy="0" rx="11" ry="7" fill="#F4E4BE" stroke="#C9B27E" stroke-width="1"/>
+    <path d="M -9 -3 q -11 -5 -9 -15 M 9 -3 q 11 -5 9 -15" fill="none" stroke="#E0C68C" stroke-width="2.2" stroke-linecap="round"/>
+    <circle cx="-4" cy="-1" r="1.8" fill="#C68E4E"/><circle cx="4" cy="-1" r="1.8" fill="#C68E4E"/>
+  </g>
+
+  <!-- ======== ZONE OUEST : panneau + rochers (cachette) ======== -->
+  <g transform="translate(260,470) rotate(-2)">
+    <line x1="30" y1="30" x2="30" y2="120" stroke="#7C4A24" stroke-width="8"/>
+    <rect x="-38" y="0" width="136" height="58" rx="6" fill="#E9D6A6" stroke="#7C4A24" stroke-width="2.2"/>
+    <text x="30" y="24" text-anchor="middle" class="sign" font-size="17" fill="#7C4A24">COWBOY CITY</text>
+    <text x="30" y="46" text-anchor="middle" class="small-sign" font-size="11" fill="#A63A2E">pop. 87&#8230; 86</text>
+    <g stroke="#7C4A24" stroke-width="1.1" fill="#FBF0D8">
+      <circle cx="82" cy="12" r="3"/>
+      <path d="M 82 12 l 6 -4 M 82 12 l 7 2 M 82 12 l -2 7"/>
+    </g>
+  </g>
+  <g>
+    <ellipse cx="120" cy="556" rx="66" ry="9" fill="#7C4A24" opacity=".15"/>
+    <path d="M 60 550 Q 52 512 82 500 Q 110 490 128 508 Q 146 498 166 512 Q 186 524 176 550 Z" fill="#C9955C" stroke="#9A6232" stroke-width="1.8"/>
+    <path d="M 92 550 Q 90 524 112 520 Q 132 518 138 538 L 140 550 Z" fill="#B98A52" stroke="#9A6232" stroke-width="1.4"/>
+    <path d="M 74 522 q 8 -4 14 0 M 148 522 q 6 -4 12 2" stroke="#9A6232" stroke-width="1" fill="none"/>
+    <path d="M 40 556 q 2 -12 -4 -17 M 46 556 q 0 -10 7 -15" stroke="#8F9A4B" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+  </g>
+  <g>
+    <ellipse cx="352" cy="598" rx="20" ry="5" fill="#7C4A24" opacity=".15"/>
+    <path d="M 352 540 L 352 596 M 352 570 q -16 -3 -18 -24 M 352 562 q 16 -3 18 -26" fill="none" stroke="#5E8C4F" stroke-width="10" stroke-linecap="round"/>
+  </g>
+
+  <!-- ======== LA MAISON BLEUE (fermée à clé) ======== -->
+  <g>
+    <path d="M 396 468 L 372 480 L 500 480 L 522 468 Z" fill="#7C4A24" opacity=".12"/>
+    <path d="M 396 316 L 388 310 L 388 452 L 396 460 Z" fill="#4A7A8C" stroke="#33566B" stroke-width="1"/>
+    <rect x="396" y="316" width="120" height="144" fill="#6FA3B8" stroke="#33566B" stroke-width="2.2"/>
+    <rect x="508" y="318" width="8" height="140" fill="#8FBCCE" opacity=".8"/>
+    <g stroke="#5E93A8" stroke-width="1">
+      <line x1="396" y1="344" x2="516" y2="344"/><line x1="396" y1="372" x2="516" y2="372"/>
+      <line x1="396" y1="400" x2="516" y2="400"/><line x1="396" y1="428" x2="516" y2="428"/>
+    </g>
+    <!-- toit -->
+    <path d="M 384 316 L 456 270 L 528 316 Z" fill="#5A3418" stroke="#3B2417" stroke-width="2.2"/>
+    <path d="M 380 319 L 456 271 L 532 319" fill="none" stroke="#3B2417" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 391 312 L 452 273" stroke="#F6ECC9" stroke-width="1.8" stroke-linecap="round"/>
+    <rect x="494" y="284" width="14" height="24" fill="#7C4A24" stroke="#5A3418" stroke-width="1.4"/>
+    <!-- porte close -->
+    <rect x="412" y="384" width="34" height="76" fill="#33566B" stroke="#224052" stroke-width="1.8"/>
+    <path d="M 412 387 h 34 M 415 384 v 76" stroke="#1E3240" opacity=".45" stroke-width="2.2" fill="none"/>
+    <g stroke="#224052" stroke-width="1"><line x1="423" y1="388" x2="423" y2="456"/><line x1="435" y1="388" x2="435" y2="456"/></g>
+    <circle cx="441" cy="424" r="2.6" fill="#E8A93F"/>
+    <!-- fenêtre : volets entrouverts, rideau tiré -->
+    <rect x="458" y="376" width="40" height="40" fill="#FFDF9E" stroke="#33566B" stroke-width="1.8"/>
+    <path d="M 458 376 L 472 376 Q 466 396 458 404 Z" fill="#C94F7C" opacity=".8"/>
+    <path d="M 498 376 L 484 376 Q 490 396 498 404 Z" fill="#C94F7C" opacity=".8"/>
+    <line x1="478" y1="376" x2="478" y2="416" stroke="#33566B" stroke-width="1"/>
+    <rect x="449" y="374" width="9" height="44" fill="#4A7A8C" stroke="#33566B" stroke-width="1"/>
+    <rect x="498" y="374" width="9" height="44" fill="#4A7A8C" stroke="#33566B" stroke-width="1"/>
+    <g stroke="#33566B" stroke-width=".8"><line x1="451" y1="380" x2="456" y2="380"/><line x1="451" y1="390" x2="456" y2="390"/>
+      <line x1="451" y1="400" x2="456" y2="400"/><line x1="500" y1="380" x2="505" y2="380"/>
+      <line x1="500" y1="390" x2="505" y2="390"/><line x1="500" y1="400" x2="505" y2="400"/></g>
+    <!-- pancarte PRIVÉ + perron -->
+    <rect x="404" y="352" width="44" height="16" rx="3" fill="#E9D6A6" stroke="#7C4A24" stroke-width="1.4"/>
+    <text x="426" y="364" text-anchor="middle" class="small-sign" font-size="9" fill="#A63A2E">PRIV&Eacute;</text>
+    <rect x="406" y="452" width="46" height="10" fill="#E9D6A6" stroke="#7C4A24" stroke-width="1.4"/>
+    <!-- fumée à la cheminée : quelqu'un vit ici -->
+    <g fill="#FFF4DA">
+      <circle class="smoke" cx="501" cy="276" r="7"/>
+      <circle class="smoke s2" cx="501" cy="276" r="5.5"/>
+      <circle class="smoke s3" cx="501" cy="276" r="8"/>
+    </g>
+    <!-- chat à la fenêtre, entre les rideaux -->
+    <g>
+      <ellipse cx="478" cy="413" rx="6" ry="4.4" fill="#8C8C8C"/>
+      <circle cx="478" cy="405" r="4.2" fill="#8C8C8C"/>
+      <path d="M 474.8 402 l -1.4 -4.2 3.8 1.8 Z M 481.2 402 l 1.4 -4.2 -3.8 1.8 Z" fill="#6E6E6E"/>
+      <circle cx="476.4" cy="404.4" r=".8" fill="#FFDD66"/><circle cx="479.6" cy="404.4" r=".8" fill="#FFDD66"/>
+    </g>
+    <!-- corde à linge entre le pignon et la cheminée -->
+    <g>
+      <path d="M 414 302 Q 456 316 494 292" fill="none" stroke="#5A3418" stroke-width="1.2"/>
+      <g stroke="#7C4A24" stroke-width=".8">
+        <rect x="428" y="306" width="13" height="15" rx="2" fill="#FBF0D8"/>
+        <rect x="450" y="309" width="11" height="13" rx="2" fill="#C94F7C"/>
+        <rect x="470" y="303" width="7" height="10" rx="2" fill="#8AB6C8"/>
+      </g>
+    </g>
+    <!-- jardinet : barrière blanche + fleurs -->
+    <g>
+      <g stroke="#7C4A24" stroke-width=".8" fill="#F6ECC9">
+        <path d="M 398 478 l 2.6 -8 2.6 8 l 0 18 -5.2 0 Z"/><path d="M 412 478 l 2.6 -8 2.6 8 l 0 18 -5.2 0 Z"/>
+        <path d="M 456 478 l 2.6 -8 2.6 8 l 0 18 -5.2 0 Z"/><path d="M 470 478 l 2.6 -8 2.6 8 l 0 18 -5.2 0 Z"/>
+        <path d="M 484 478 l 2.6 -8 2.6 8 l 0 18 -5.2 0 Z"/><path d="M 498 478 l 2.6 -8 2.6 8 l 0 18 -5.2 0 Z"/>
+      </g>
+      <rect x="396" y="480" width="120" height="3.4" fill="#F6ECC9" stroke="#7C4A24" stroke-width=".8"/>
+      <rect x="396" y="489" width="120" height="3.4" fill="#F6ECC9" stroke="#7C4A24" stroke-width=".8"/>
+      <g stroke="#5E8C4F" stroke-width="2" stroke-linecap="round">
+        <line x1="404" y1="478" x2="404" y2="468"/><line x1="462" y1="478" x2="463" y2="466"/>
+        <line x1="492" y1="478" x2="491" y2="469"/><line x1="507" y1="478" x2="508" y2="470"/>
+      </g>
+      <circle cx="404" cy="466" r="2.6" fill="#C94F7C"/><circle cx="463" cy="464" r="2.6" fill="#E8A93F"/>
+      <circle cx="491" cy="467" r="2.6" fill="#C0392B"/><circle cx="508" cy="468" r="2.6" fill="#C94F7C"/>
+    </g>
+    <!-- boîte aux lettres penchée -->
+    <g transform="translate(371,468) rotate(-7)">
+      <line x1="0" y1="0" x2="0" y2="46" stroke="#7C4A24" stroke-width="4"/>
+      <rect x="-13" y="-16" width="26" height="16" rx="7" fill="#4A7A8C" stroke="#33566B" stroke-width="1.4"/>
+      <line x1="-13" y1="-2" x2="13" y2="-2" stroke="#33566B" stroke-width="1.4"/>
+      <path d="M 11 -16 l 0 -8 5 0 0 6 -3 0 Z" fill="#C0392B"/>
+    </g>
+    <!-- rocking-chair qui se balance tout seul -->
+    <g class="selfrock">
+      <g transform="translate(545,462)" stroke="#5A3418" stroke-width="2" fill="none" stroke-linecap="round">
+        <path d="M -10 34 Q 2 41 16 34"/>
+        <line x1="-6" y1="36" x2="-4" y2="18"/><line x1="12" y1="36" x2="10" y2="18"/>
+        <line x1="-6" y1="19" x2="12" y2="19"/>
+        <line x1="-5" y1="19" x2="-9" y2="-4"/><line x1="0" y1="19" x2="-4" y2="-4"/><line x1="5" y1="19" x2="1" y2="-4"/>
+        <line x1="-10" y1="-5" x2="2" y2="-5"/>
+      </g>
+    </g>
+    <!-- billet glissé sous la porte (apparaît avec les indices) -->
+    <g id="bnote" style="display:none" transform="translate(472,458) rotate(-8)">
+      <rect x="-8" y="-6" width="16" height="12" rx="1" fill="#FBF0D8" stroke="#C9B27E" stroke-width="1"/>
+      <line x1="-5" y1="-2" x2="5" y2="-2" stroke="#C9B27E" stroke-width="1"/>
+      <line x1="-5" y1="2" x2="3" y2="2" stroke="#C9B27E" stroke-width="1"/>
+    </g>
+  </g>
+  <!-- ======== LA VILLE (art de la maquette, décalé de +480) ======== -->
+  <g transform="translate(480,0)">
+    <!-- éolienne de ranch -->
+    <g stroke="#7C4A24" stroke-width="5" fill="none">
+      <path d="M 838 460 L 852 340 M 866 460 L 852 340"/>
+      <path d="M 843 420 L 861 420"/>
+    </g>
+    <g class="windmill">
+      <g transform="translate(852,336)" stroke="#7C4A24" stroke-width="2.2" fill="#E9D6A6">
+        <path d="M 0 0 L -6 -34 L 6 -34 Z"/>
+        <path d="M 0 0 L 34 -6 L 34 6 Z"/>
+        <path d="M 0 0 L 6 34 L -6 34 Z"/>
+        <path d="M 0 0 L -34 6 L -34 -6 Z"/>
+        <circle cx="0" cy="0" r="5" fill="#7C4A24"/>
+      </g>
+    </g>
+    <!-- ============ BANQUE (en retrait) ============ -->
+    <g>
+      <path d="M 318 460 L 298 472 L 398 472 L 414 460 Z" fill="#7C4A24" opacity=".12"/>
+      <path d="M 318 308 L 310 301 L 310 453 L 318 460 Z" fill="#B0925C" stroke="#7C4A24" stroke-width="1"/>
+      <rect x="318" y="308" width="96" height="152" fill="#D9BC85" stroke="#7C4A24" stroke-width="2.2"/>
+      <g stroke="#C9A868" stroke-width="1">
+        <line x1="318" y1="340" x2="414" y2="340"/><line x1="318" y1="372" x2="414" y2="372"/>
+        <line x1="318" y1="428" x2="414" y2="428"/>
+      </g>
+      <path d="M 310 286 L 302 279 L 414 279 L 422 286 Z" fill="#F6ECC9" stroke="#7C4A24" stroke-width="1"/>
+      <path d="M 310 286 L 302 279 L 302 305 L 310 312 Z" fill="#C9B27E" stroke="#7C4A24" stroke-width="1"/>
+      <rect x="310" y="286" width="112" height="26" fill="#E9D6A6" stroke="#7C4A24" stroke-width="2.2"/>
+      <text x="366" y="306" text-anchor="middle" class="sign" font-size="17" fill="#7C4A24">BANK</text>
+      <rect x="318" y="312" width="96" height="6" fill="#7C4A24" opacity=".22"/>
+      <!-- fenêtre à barreaux -->
+      <rect x="330" y="330" width="34" height="38" fill="#8AB6C8" stroke="#5A3418" stroke-width="1.4"/>
+      <path d="M 330 333 h 34 M 333 330 v 38" stroke="#5A3418" opacity=".4" stroke-width="2.2" fill="none"/>
+      <g stroke="#5A3418" stroke-width="1">
+        <line x1="339" y1="330" x2="339" y2="368"/><line x1="348" y1="330" x2="348" y2="368"/>
+        <line x1="357" y1="330" x2="357" y2="368"/>
+      </g>
+      <!-- porte et dollar -->
+      <rect x="374" y="392" width="30" height="68" fill="#7C4A24" stroke="#5A3418" stroke-width="1.4"/>
+      <circle cx="347" cy="400" r="12" fill="#E8A93F" stroke="#7C4A24" stroke-width="1"/>
+      <text x="347" y="405" text-anchor="middle" class="small-sign" font-size="13" fill="#7C4A24">$</text>
+    </g>
+
+    <!-- ============ BUREAU DU SHÉRIF ============ -->
+    <g>
+      <path d="M 48 468 L 20 482 L 292 482 L 322 468 Z" fill="#7C4A24" opacity=".12"/>
+      <!-- retour de mur gauche (volume) -->
+      <path d="M 60 270 L 50 262 L 50 452 L 60 460 Z" fill="#8F5A28" stroke="#7C4A24" stroke-width="1"/>
+      <!-- corps -->
+      <rect x="60" y="270" width="250" height="190" fill="#B5773F" stroke="#7C4A24" stroke-width="2.2"/>
+      <rect x="302" y="272" width="8" height="186" fill="#C9955C" opacity=".8"/>
+      <!-- lattes -->
+      <g stroke="#9A6232" stroke-width="1">
+        <line x1="60" y1="300" x2="310" y2="300"/><line x1="60" y1="330" x2="310" y2="330"/>
+        <line x1="60" y1="360" x2="310" y2="360"/><line x1="60" y1="390" x2="310" y2="390"/>
+        <line x1="60" y1="420" x2="310" y2="420"/>
+      </g>
+      <!-- nœuds du bois -->
+      <g fill="#9A6232">
+        <circle cx="86" cy="286" r="2.5"/><circle cx="262" cy="316" r="2.5"/>
+        <circle cx="120" cy="406" r="2.5"/><circle cx="292" cy="436" r="2.5"/>
+      </g>
+      <!-- fronton avec épaisseur -->
+      <path d="M 48 222 L 38 214 L 312 214 L 322 222 Z" fill="#F6ECC9" stroke="#7C4A24" stroke-width="1"/>
+      <path d="M 48 222 L 38 214 L 38 266 L 48 274 Z" fill="#CBB183" stroke="#7C4A24" stroke-width="1"/>
+      <rect x="48" y="222" width="274" height="52" fill="#E9D6A6" stroke="#7C4A24" stroke-width="2.2"/>
+      <text x="185" y="258" text-anchor="middle" class="sign" font-size="27" fill="#7C4A24">SHERIFF</text>
+      <rect x="60" y="274" width="250" height="7" fill="#7C4A24" opacity=".25"/>
+      <!-- étoiles -->
+      <path d="M 84 236 l 4.7 9.5 10.5 1.5 -7.6 7.4 1.8 10.4 -9.4 -4.9 -9.4 4.9 1.8 -10.4 -7.6 -7.4 10.5 -1.5 Z" fill="#E8A93F" stroke="#7C4A24" stroke-width="1"/>
+      <path d="M 286 236 l 4.7 9.5 10.5 1.5 -7.6 7.4 1.8 10.4 -9.4 -4.9 -9.4 4.9 1.8 -10.4 -7.6 -7.4 10.5 -1.5 Z" fill="#E8A93F" stroke="#7C4A24" stroke-width="1"/>
+      <!-- grande horloge -->
+      <g>
+        <path d="M 162 150 L 156 145 L 202 145 L 208 150 Z" fill="#8A5A3C" stroke="#5A3418" stroke-width="1"/>
+        <path d="M 161 152 L 156 147 L 156 208 L 161 213 Z" fill="#5A3418"/>
+        <rect x="160" y="150" width="50" height="66" rx="6" fill="#7C4A24" stroke="#5A3418" stroke-width="1.4"/>
+        <circle cx="185" cy="176" r="19" fill="#FBF0D8" stroke="#5A3418" stroke-width="1.4"/>
+        <g stroke="#5A3418" stroke-width="1">
+          <line x1="185" y1="159" x2="185" y2="163"/><line x1="185" y1="189" x2="185" y2="193"/>
+          <line x1="168" y1="176" x2="172" y2="176"/><line x1="198" y1="176" x2="202" y2="176"/>
+        </g>
+        <line x1="185" y1="176" x2="185" y2="164" stroke="#3B2417" stroke-width="1.4" stroke-linecap="round"/>
+        <line x1="185" y1="176" x2="194" y2="180" stroke="#3B2417" stroke-width="1.4" stroke-linecap="round"/>
+        <g class="pendulum">
+          <line x1="185" y1="200" x2="185" y2="222" stroke="#E8A93F" stroke-width="1.4"/>
+          <circle cx="185" cy="226" r="6" fill="#E8A93F" stroke="#5A3418" stroke-width="1"/>
+        </g>
+      </g>
+      <!-- porte -->
+      <rect x="105" y="356" width="52" height="104" fill="#7C4A24" stroke="#5A3418" stroke-width="1.4"/>
+      <g stroke="#5A3418" stroke-width="1"><line x1="122" y1="360" x2="122" y2="456"/><line x1="140" y1="360" x2="140" y2="456"/></g>
+      <circle cx="148" cy="410" r="3.5" fill="#E8A93F"/>
+      <path d="M 105 359 h 52 M 108 356 v 104" stroke="#3B2417" opacity=".35" stroke-width="2.2" fill="none"/>
+      <!-- fenêtre à barreaux (la prison !) -->
+      <rect x="230" y="330" width="54" height="44" fill="#8AB6C8" stroke="#5A3418" stroke-width="1.4"/>
+      <path d="M 230 333 h 54 M 233 330 v 44" stroke="#5A3418" opacity=".4" stroke-width="2.2" fill="none"/>
+      <g stroke="#5A3418" stroke-width="1.4">
+        <line x1="243" y1="330" x2="243" y2="374"/><line x1="257" y1="330" x2="257" y2="374"/>
+        <line x1="271" y1="330" x2="271" y2="374"/>
+      </g>
+      <!-- affiches WANTED -->
+      <g transform="translate(80,306) rotate(-3)">
+        <rect width="42" height="54" fill="#F4E4BE" stroke="#7C4A24" stroke-width="1"/>
+        <text x="21" y="12" text-anchor="middle" class="small-sign" font-size="8" fill="#7C4A24">WANTED</text>
+        <circle cx="21" cy="28" r="9" fill="#D8A070"/>
+        <path d="M 13 34 q 8 4.6 16 0 l 0 2.6 q -8 4 -16 0 Z" fill="#4E4A46" opacity=".55"/>
+        <path d="M 14.5 23.5 l 5.4 2 M 27.5 23.5 l -5.4 2" stroke="#1E1A18" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="17.6" cy="27.6" r=".9" fill="#1E1A18"/><circle cx="24.4" cy="27.6" r=".9" fill="#1E1A18"/>
+        <path d="M 17.6 33.6 q 3.4 -2 6.8 .4" stroke="#1E1A18" stroke-width="1" fill="none" stroke-linecap="round"/>
+        <ellipse cx="21" cy="18.6" rx="13" ry="2.8" fill="#1E1A18"/>
+        <path d="M 14 17.4 L 15 10 Q 21 7.6 27 10 L 28 17.4 Q 21 15 14 17.4 Z" fill="#1E1A18"/>
+        <text x="21" y="48" text-anchor="middle" class="small-sign" font-size="7" fill="#A63A2E">$5000</text>
+      </g>
+      <g transform="translate(176,310) rotate(2)">
+        <rect width="42" height="54" fill="#F4E4BE" stroke="#7C4A24" stroke-width="1"/>
+        <text x="21" y="12" text-anchor="middle" class="small-sign" font-size="8" fill="#7C4A24">WANTED</text>
+        <circle cx="21" cy="28" r="9" fill="#D8A070"/>
+        <path d="M 13 34 q 8 4.6 16 0 l 0 2.6 q -8 4 -16 0 Z" fill="#4E4A46" opacity=".55"/>
+        <path d="M 14.5 23.5 l 5.4 2 M 27.5 23.5 l -5.4 2" stroke="#1E1A18" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="17.6" cy="27.6" r=".9" fill="#1E1A18"/><circle cx="24.4" cy="27.6" r=".9" fill="#1E1A18"/>
+        <path d="M 17.6 33.6 q 3.4 -2 6.8 .4" stroke="#1E1A18" stroke-width="1" fill="none" stroke-linecap="round"/>
+        <ellipse cx="21" cy="18.6" rx="13" ry="2.8" fill="#1E1A18"/>
+        <path d="M 14 17.4 L 15 10 Q 21 7.6 27 10 L 28 17.4 Q 21 15 14 17.4 Z" fill="#1E1A18"/>
+        <text x="21" y="48" text-anchor="middle" class="small-sign" font-size="6.4" fill="#A63A2E">MAC BLAIN</text>
+      </g>
+      <!-- trottoir -->
+      <rect x="48" y="452" width="274" height="16" fill="#E9D6A6" stroke="#7C4A24" stroke-width="1.4"/>
+      <g stroke="#C9B27E" stroke-width="1">
+        <line x1="90" y1="454" x2="90" y2="466"/><line x1="140" y1="454" x2="140" y2="466"/>
+        <line x1="190" y1="454" x2="190" y2="466"/><line x1="240" y1="454" x2="240" y2="466"/>
+      </g>
+      <!-- rocking-chair sur le porche -->
+      <g transform="translate(276,414)" stroke="#5A3418" stroke-width="1" fill="none" stroke-linecap="round">
+        <path d="M -10 38 Q 2 46 16 38"/>
+        <line x1="-6" y1="40" x2="-4" y2="20"/><line x1="12" y1="40" x2="10" y2="20"/>
+        <line x1="-6" y1="21" x2="12" y2="21"/>
+        <line x1="-5" y1="21" x2="-9" y2="-4"/><line x1="0" y1="21" x2="-4" y2="-4"/><line x1="5" y1="21" x2="1" y2="-4"/>
+        <line x1="-10" y1="-5" x2="2" y2="-5"/>
+      </g>
+    </g>
+
+    <!-- ============ SALOON DE DOLLY ============ -->
+    <g>
+      <path d="M 418 468 L 392 482 L 714 482 L 742 468 Z" fill="#7C4A24" opacity=".12"/>
+      <!-- retour de mur gauche (volume) -->
+      <path d="M 430 200 L 420 192 L 420 452 L 430 460 Z" fill="#7E2B22" stroke="#6E241C" stroke-width="1"/>
+      <rect x="430" y="200" width="300" height="260" fill="#A63A2E" stroke="#6E241C" stroke-width="2.2"/>
+      <rect x="722" y="202" width="8" height="256" fill="#B8463A" opacity=".8"/>
+      <g stroke="#8F2F25" stroke-width="1">
+        <line x1="430" y1="240" x2="730" y2="240"/><line x1="430" y1="280" x2="730" y2="280"/>
+        <line x1="430" y1="320" x2="730" y2="320"/><line x1="430" y1="400" x2="730" y2="400"/>
+      </g>
+      <g fill="#8F2F25">
+        <circle cx="448" cy="262" r="2.5"/><circle cx="712" cy="342" r="2.5"/><circle cx="530" cy="440" r="2.5"/>
+      </g>
+      <!-- fronton à créneaux avec épaisseur -->
+      <path d="M 418 156 L 410 150 L 410 194 L 418 200 Z" fill="#CBB183" stroke="#7C4A24" stroke-width="1"/>
+      <g fill="#F6ECC9" stroke="#7C4A24" stroke-width="1">
+        <path d="M 418 156 L 410 150 L 450 150 L 458 156 Z"/>
+        <path d="M 502 156 L 494 150 L 534 150 L 542 156 Z"/>
+        <path d="M 618 156 L 610 150 L 650 150 L 658 156 Z"/>
+        <path d="M 702 156 L 694 150 L 734 150 L 742 156 Z"/>
+      </g>
+      <g fill="#CBB183">
+        <path d="M 502 156 L 494 150 L 494 166 L 502 172 Z"/>
+        <path d="M 618 156 L 610 150 L 610 166 L 618 172 Z"/>
+        <path d="M 702 156 L 694 150 L 694 166 L 702 172 Z"/>
+      </g>
+      <path d="M 418 200 L 418 156 L 458 156 L 458 172 L 502 172 L 502 156 L 542 156 L 542 172 L 618 172 L 618 156 L 658 156 L 658 172 L 702 172 L 702 156 L 742 156 L 742 200 Z" fill="#E9D6A6" stroke="#7C4A24" stroke-width="2.2"/>
+      <text x="580" y="192" text-anchor="middle" class="sign" font-size="21" fill="#A63A2E">DOLLY'S SALOON</text>
+      <rect x="430" y="200" width="300" height="7" fill="#6E241C" opacity=".3"/>
+      <!-- balcon -->
+      <rect x="446" y="286" width="268" height="8" fill="#E9D6A6" stroke="#7C4A24" stroke-width="1.4"/>
+      <g stroke="#E9D6A6" stroke-width="2.2">
+        <line x1="460" y1="294" x2="460" y2="316"/><line x1="490" y1="294" x2="490" y2="316"/>
+        <line x1="520" y1="294" x2="520" y2="316"/><line x1="550" y1="294" x2="550" y2="316"/>
+        <line x1="610" y1="294" x2="610" y2="316"/><line x1="640" y1="294" x2="640" y2="316"/>
+        <line x1="670" y1="294" x2="670" y2="316"/><line x1="700" y1="294" x2="700" y2="316"/>
+      </g>
+      <rect x="446" y="312" width="268" height="7" fill="#E9D6A6" stroke="#7C4A24" stroke-width="1.4"/>
+      <rect x="446" y="320" width="268" height="6" fill="#6E241C" opacity=".3"/>
+      <!-- fenêtres étage avec rideaux -->
+      <rect x="470" y="228" width="46" height="50" fill="#FFDF9E" stroke="#6E241C" stroke-width="1.4"/>
+      <rect x="644" y="228" width="46" height="50" fill="#FFDF9E" stroke="#6E241C" stroke-width="1.4"/>
+      <g fill="#C94F7C" opacity=".85">
+        <path d="M 470 228 L 484 228 Q 478 252 470 262 Z"/>
+        <path d="M 516 228 L 502 228 Q 508 252 516 262 Z"/>
+        <path d="M 644 228 L 658 228 Q 652 252 644 262 Z"/>
+        <path d="M 690 228 L 676 228 Q 682 252 690 262 Z"/>
+      </g>
+      <g stroke="#6E241C" stroke-width="1">
+        <line x1="493" y1="228" x2="493" y2="278"/><line x1="470" y1="253" x2="516" y2="253"/>
+        <line x1="667" y1="228" x2="667" y2="278"/><line x1="644" y1="253" x2="690" y2="253"/>
+      </g>
+      <!-- fenêtre centrale de l'étage (chambre de Dolly, rideaux tirés) -->
+      <g>
+        <rect x="556" y="226" width="48" height="54" fill="#FFDF9E" stroke="#6E241C" stroke-width="1.4"/>
+        <g fill="#C94F7C" opacity=".85">
+          <path d="M 556 226 L 571 226 Q 564 251 556 261 Z"/>
+          <path d="M 604 226 L 589 226 Q 596 251 604 261 Z"/>
+        </g>
+        <path d="M 560 226 q 20 8 40 0" fill="none" stroke="#96395C" stroke-width="1.4"/>
+        <g stroke="#6E241C" stroke-width="1">
+          <line x1="580" y1="226" x2="580" y2="280"/><line x1="556" y1="253" x2="604" y2="253"/>
+        </g>
+      </g>
+      <!-- lampe à huile au mur -->
+      <g transform="translate(672,300)">
+        <circle cx="0" cy="0" r="9" fill="#FFDD66" opacity=".45"/>
+        <rect x="-4" y="-7" width="8" height="11" rx="3" fill="#FFDF9E" stroke="#5A3418" stroke-width="1"/>
+        <path d="M -6 -8 L 6 -8 L 0 -13 Z" fill="#5A3418"/>
+      </g>
+      <!-- portes battantes : elles ne battent qu'au passage d'un client -->
+      <rect x="552" y="352" width="76" height="108" fill="#5A2018" stroke="#3d150f" stroke-width="1.4"/>
+      <g class="patron">
+        <g transform="translate(604,394)">
+          <ellipse cx="0" cy="60" rx="14" ry="4" fill="#3B2417" opacity=".18"/>
+          <g class="patron-legs">
+            <path d="M -5 30 L -7 44 L -6 56 L -1 56 L -2 44 L -1 32 Z" fill="#4A5A6A"/>
+            <path d="M 5 30 L 7 44 L 6 56 L 1 56 L 2 44 L 1 32 Z" fill="#4A5A6A"/>
+            <path d="M -8 54 L -1 54 L -1 60 L -11 60 Q -13 56 -8 54 Z" fill="#5A3418"/>
+            <path d="M 8 54 L 1 54 L 1 60 L 11 60 Q 13 56 8 54 Z" fill="#5A3418"/>
+          </g>
+          <rect x="-8" y="9" width="16" height="24" rx="4" fill="#B39A6B"/>
+          <path d="M -8 10 L -3 12 L -3 32 L -8 32 Z M 8 10 L 3 12 L 3 32 L 8 32 Z" fill="#5A6E5A"/>
+          <path d="M -8 28 h 16 v 4 h -16 Z" fill="#3B2417"/>
+          <rect x="-2" y="28.5" width="4" height="3" rx="1" fill="#E8A93F"/>
+          <path d="M -8 12 Q -13 18 -12 26" fill="none" stroke="#B39A6B" stroke-width="4" stroke-linecap="round"/>
+          <path d="M 8 12 Q 13 20 11 27" fill="none" stroke="#B39A6B" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="-12" cy="28" r="2.4" fill="#F2C094"/><circle cx="11" cy="29" r="2.4" fill="#F2C094"/>
+          <path d="M -5 8 L 5 8 L 2 12 Q 0 13 -2 12 Z" fill="#A63A2E"/>
+          <circle cx="0" cy="1" r="6.5" fill="#F2C094"/>
+          <path d="M -4 4 q 4 3 8 0 q -4 5 -8 0 Z" fill="#8A5A3C"/>
+          <circle cx="-2.4" cy="0" r="1" fill="#3B2417"/><circle cx="2.4" cy="0" r="1" fill="#3B2417"/>
+          <path d="M -4.4 -2.4 q 2 -1.2 4 -.4 M .4 -2.8 q 2 -.8 4 .4" stroke="#6B4226" stroke-width="1" fill="none" stroke-linecap="round"/>
+          <ellipse cx="0" cy="-6.5" rx="11" ry="2.6" fill="#4E342E"/>
+          <path d="M -7 -6 L -6 -14 Q 0 -17 6 -14 L 7 -6 Z" fill="#4E342E"/>
+          <rect x="-6.6" y="-10" width="13.2" height="2.4" fill="#7C4A24"/>
+        </g>
+      </g>
+      <g class="door-l">
+        <rect x="554" y="368" width="36" height="62" rx="5" fill="#E9D6A6" stroke="#7C4A24" stroke-width="1.4"/>
+        <line x1="562" y1="374" x2="562" y2="424" stroke="#C9B27E" stroke-width="1.4"/>
+        <line x1="572" y1="374" x2="572" y2="424" stroke="#C9B27E" stroke-width="1.4"/>
+        <line x1="582" y1="374" x2="582" y2="424" stroke="#C9B27E" stroke-width="1.4"/>
+      </g>
+      <g class="door-r">
+        <rect x="590" y="368" width="36" height="62" rx="5" fill="#E9D6A6" stroke="#7C4A24" stroke-width="1.4"/>
+        <line x1="598" y1="374" x2="598" y2="424" stroke="#C9B27E" stroke-width="1.4"/>
+        <line x1="608" y1="374" x2="608" y2="424" stroke="#C9B27E" stroke-width="1.4"/>
+        <line x1="618" y1="374" x2="618" y2="424" stroke="#C9B27E" stroke-width="1.4"/>
+      </g>
+      <!-- fenêtres rez -->
+      <rect x="462" y="352" width="60" height="66" fill="#FFDF9E" stroke="#6E241C" stroke-width="1.4"/>
+      <line x1="462" y1="385" x2="522" y2="385" stroke="#6E241C" stroke-width="1"/>
+      <rect x="658" y="352" width="60" height="66" fill="#FFDF9E" stroke="#6E241C" stroke-width="1.4"/>
+      <line x1="658" y1="385" x2="718" y2="385" stroke="#6E241C" stroke-width="1"/>
+      <!-- embrasures (volume des ouvertures) -->
+      <g stroke="#6E241C" opacity=".4" stroke-width="2.2" fill="none">
+        <path d="M 470 231 h 46 M 473 228 v 50"/>
+        <path d="M 644 231 h 46 M 647 228 v 50"/>
+        <path d="M 462 355 h 60 M 465 352 v 66"/>
+        <path d="M 658 355 h 60 M 661 352 v 66"/>
+        <path d="M 552 355 h 76 M 555 352 v 108"/>
+      </g>
+      <!-- silhouettes attablées derrière la fenêtre -->
+      <g fill="#B8763B" opacity=".55">
+        <circle cx="478" cy="392" r="7"/><rect x="471" y="398" width="14" height="18" rx="4"/>
+        <rect x="469" y="386" width="18" height="2.5" rx="1"/><rect x="473" y="381" width="10" height="6" rx="2"/>
+        <circle cx="504" cy="394" r="7"/><rect x="497" y="400" width="14" height="16" rx="4"/>
+        <rect x="495" y="388" width="18" height="2.5" rx="1"/><rect x="499" y="383" width="10" height="6" rx="2"/>
+        <rect x="484" y="408" width="14" height="2" rx="1"/>
+        <rect x="488" y="403" width="2.5" height="5"/><rect x="492" y="403" width="2.5" height="5"/>
+      </g>
+      <!-- impacts de balles dans la vitre -->
+      <g stroke="#6E241C" stroke-width="1" fill="#FBF0D8">
+        <circle cx="694" cy="372" r="4"/>
+        <path d="M 694 372 l 8 -6 M 694 372 l 9 3 M 694 372 l -2 9 M 694 372 l -8 -5"/>
+      </g>
+      <!-- plantes en pot -->
+      <g>
+        <path d="M 438 430 l 4 -26 q 8 -4 16 0 l 4 26 Z" fill="#C9713F" stroke="#7C4A24" stroke-width="1.4"/>
+        <path d="M 450 406 L 450 376 M 450 390 q -12 -2 -14 -16 M 450 384 q 12 -2 14 -16" fill="none" stroke="#5E8C4F" stroke-width="7" stroke-linecap="round"/>
+      </g>
+      <g>
+        <path d="M 726 430 l 4 -26 q 8 -4 16 0 l 4 26 Z" fill="#C9713F" stroke="#7C4A24" stroke-width="1.4"/>
+        <path d="M 738 406 L 738 372 M 738 392 q -13 -2 -15 -18 M 738 386 q 13 -2 15 -18" fill="none" stroke="#5E8C4F" stroke-width="7" stroke-linecap="round"/>
+      </g>
+      <!-- trottoir -->
+      <rect x="418" y="452" width="324" height="16" fill="#E9D6A6" stroke="#7C4A24" stroke-width="1.4"/>
+      <g stroke="#C9B27E" stroke-width="1">
+        <line x1="470" y1="454" x2="470" y2="466"/><line x1="530" y1="454" x2="530" y2="466"/>
+        <line x1="590" y1="454" x2="590" y2="466"/><line x1="650" y1="454" x2="650" y2="466"/>
+        <line x1="706" y1="454" x2="706" y2="466"/>
+      </g>
+    </g>
+
+    <!-- ============ MAGASIN GÉNÉRAL ============ -->
+    <g>
+      <path d="M 838 468 L 812 482 L 1064 482 L 1092 468 Z" fill="#7C4A24" opacity=".12"/>
+      <!-- retour de mur gauche (volume) -->
+      <path d="M 850 290 L 842 284 L 842 454 L 850 460 Z" fill="#8F5A28" stroke="#7C4A24" stroke-width="1"/>
+      <rect x="850" y="290" width="230" height="170" fill="#B5773F" stroke="#7C4A24" stroke-width="2.2"/>
+      <rect x="1072" y="292" width="8" height="166" fill="#C9955C" opacity=".8"/>
+      <rect x="850" y="290" width="230" height="7" fill="#7C4A24" opacity=".2"/>
+      <g stroke="#9A6232" stroke-width="1">
+        <line x1="850" y1="320" x2="1080" y2="320"/><line x1="850" y1="350" x2="1080" y2="350"/>
+        <line x1="850" y1="410" x2="1080" y2="410"/>
+      </g>
+      <g fill="#9A6232">
+        <circle cx="1064" cy="334" r="2.5"/><circle cx="866" cy="308" r="2.5"/>
+      </g>
+      <path d="M 838 290 L 965 240 L 1092 290 Z" fill="#E9D6A6" stroke="#7C4A24" stroke-width="2.2"/>
+      <!-- épaisseur du toit -->
+      <path d="M 834 293 L 965 241 L 1096 293" fill="none" stroke="#7C4A24" stroke-width="5" stroke-linecap="round"/>
+      <path d="M 843 287 L 965 238.6" fill="none" stroke="#F6ECC9" stroke-width="2.2" stroke-linecap="round"/>
+      <text x="965" y="283" text-anchor="middle" class="sign" font-size="14" fill="#7C4A24">GENERAL STORE</text>
+      <!-- cheminée + fumée -->
+      <path d="M 1052 248 L 1046 243 L 1046 281 L 1052 286 Z" fill="#5A3418"/>
+      <path d="M 1052 248 L 1046 243 L 1066 243 L 1072 248 Z" fill="#8A5A3C" stroke="#5A3418" stroke-width="1"/>
+      <rect x="1052" y="248" width="20" height="38" fill="#7C4A24" stroke="#5A3418" stroke-width="1.4"/>
+      <g fill="#FFF4DA">
+        <circle class="smoke" cx="1062" cy="238" r="10"/>
+        <circle class="smoke s2" cx="1062" cy="238" r="8"/>
+        <circle class="smoke s3" cx="1062" cy="238" r="12"/>
+      </g>
+      <!-- vitrine + auvent rayé -->
+      <rect x="872" y="340" width="80" height="78" fill="#8AB6C8" stroke="#5A3418" stroke-width="1.4"/>
+      <line x1="912" y1="340" x2="912" y2="418" stroke="#5A3418" stroke-width="1"/>
+      <text x="892" y="366" text-anchor="middle" class="small-sign" font-size="9" fill="#FBF0D8" opacity=".9">OPEN</text>
+      <g>
+        <rect x="862" y="326" width="100" height="20" fill="#E9D6A6" stroke="#7C4A24" stroke-width="1.4"/>
+        <rect x="870" y="328" width="13" height="16" fill="#A63A2E"/>
+        <rect x="896" y="328" width="13" height="16" fill="#A63A2E"/>
+        <rect x="922" y="328" width="13" height="16" fill="#A63A2E"/>
+        <rect x="948" y="328" width="12" height="16" fill="#A63A2E"/>
+        <g stroke="#7C4A24" stroke-width="1">
+          <circle cx="870" cy="346" r="6.5" fill="#A63A2E"/>
+          <circle cx="883" cy="346" r="6.5" fill="#E9D6A6"/>
+          <circle cx="896" cy="346" r="6.5" fill="#A63A2E"/>
+          <circle cx="909" cy="346" r="6.5" fill="#E9D6A6"/>
+          <circle cx="922" cy="346" r="6.5" fill="#A63A2E"/>
+          <circle cx="935" cy="346" r="6.5" fill="#E9D6A6"/>
+          <circle cx="948" cy="346" r="6.5" fill="#A63A2E"/>
+        </g>
+      </g>
+      <!-- porte -->
+      <rect x="988" y="350" width="48" height="110" fill="#7C4A24" stroke="#5A3418" stroke-width="1.4"/>
+      <rect x="996" y="360" width="32" height="36" fill="#8AB6C8" stroke="#5A3418" stroke-width="1"/>
+      <circle cx="1030" cy="416" r="3.5" fill="#E8A93F"/>
+      <path d="M 988 353 h 48 M 991 350 v 110" stroke="#3B2417" opacity=".35" stroke-width="2.2" fill="none"/>
+      <path d="M 875 340 v 78" stroke="#5A3418" opacity=".35" stroke-width="2.2" fill="none"/>
+      <!-- tonneaux, caisse et sac -->
+      <g>
+        <rect x="1044" y="414" width="30" height="40" rx="5" fill="#C9713F" stroke="#7C4A24" stroke-width="1.4"/>
+        <line x1="1044" y1="426" x2="1074" y2="426" stroke="#7C4A24" stroke-width="1"/>
+        <line x1="1044" y1="442" x2="1074" y2="442" stroke="#7C4A24" stroke-width="1"/>
+      </g>
+      <g>
+        <rect x="1046" y="384" width="26" height="26" fill="#E0C68C" stroke="#7C4A24" stroke-width="1.4"/>
+        <line x1="1046" y1="384" x2="1072" y2="410" stroke="#7C4A24" stroke-width="1"/>
+        <line x1="1072" y1="384" x2="1046" y2="410" stroke="#7C4A24" stroke-width="1"/>
+      </g>
+      <path d="M 966 460 q -4 -34 12 -36 q 16 2 12 36 Z" fill="#E0C68C" stroke="#7C4A24" stroke-width="1.4"/>
+      <rect x="838" y="452" width="254" height="16" fill="#E9D6A6" stroke="#7C4A24" stroke-width="1.4"/>
+      <g stroke="#C9B27E" stroke-width="1">
+        <line x1="890" y1="454" x2="890" y2="466"/><line x1="950" y1="454" x2="950" y2="466"/>
+        <line x1="1010" y1="454" x2="1010" y2="466"/><line x1="1060" y1="454" x2="1060" y2="466"/>
+      </g>
+    </g>
+
+    <!-- fanions au-dessus de la place -->
+    <g>
+      <line x1="322" y1="180" x2="322" y2="460" stroke="#7C4A24" stroke-width="7"/>
+      <line x1="1120" y1="170" x2="1120" y2="460" stroke="#7C4A24" stroke-width="7"/>
+      <path d="M 322 186 C 560 250 900 246 1120 176" fill="none" stroke="#7C4A24" stroke-width="1.4"/>
+      <g class="bunting">
+        <g stroke="#6E241C" stroke-width="1">
+          <path d="M 370 202 l 11 26 l 12 -22 Z" fill="#A63A2E"/>
+          <path d="M 430 214 l 11 26 l 12 -22 Z" fill="#6FA3B8"/>
+          <path d="M 490 224 l 11 26 l 12 -22 Z" fill="#E8A93F"/>
+          <path d="M 550 231 l 11 26 l 12 -22 Z" fill="#C94F7C"/>
+          <path d="M 610 236 l 11 26 l 12 -22 Z" fill="#E9D6A6"/>
+        </g>
+      </g>
+      <g class="bunting b2">
+        <g stroke="#6E241C" stroke-width="1">
+          <path d="M 680 238 l 11 26 l 12 -22 Z" fill="#6FA3B8"/>
+          <path d="M 740 237 l 11 26 l 12 -22 Z" fill="#A63A2E"/>
+          <path d="M 810 233 l 11 26 l 12 -22 Z" fill="#C94F7C"/>
+          <path d="M 880 226 l 11 26 l 12 -22 Z" fill="#E8A93F"/>
+          <path d="M 950 215 l 11 26 l 12 -22 Z" fill="#6FA3B8"/>
+          <path d="M 1020 200 l 11 26 l 12 -22 Z" fill="#C94F7C"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- abreuvoir + pompe -->
+    <g>
+      <ellipse cx="390" cy="524" rx="52" ry="6" fill="#7C4A24" opacity=".15"/>
+      <rect x="345" y="486" width="90" height="34" rx="6" fill="#7C4A24" stroke="#5A3418" stroke-width="1.4"/>
+      <rect x="351" y="492" width="78" height="14" rx="4" fill="#8AB6C8"/>
+      <rect x="332" y="452" width="12" height="66" fill="#7C4A24" stroke="#5A3418" stroke-width="1.4"/>
+      <path d="M 338 456 q 20 -4 24 12" fill="none" stroke="#5A3418" stroke-width="6" stroke-linecap="round"/>
+      <path d="M 360 470 q 2 8 0 20" stroke="#8AB6C8" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+    </g>
+
+    <!-- lampadaire à pétrole -->
+    <g transform="translate(770,452)">
+      <ellipse cx="0" cy="66" rx="16" ry="4" fill="#7C4A24" opacity=".15"/>
+      <line x1="0" y1="-4" x2="0" y2="64" stroke="#5A3418" stroke-width="5"/>
+      <circle cx="0" cy="-14" r="13" fill="#FFDD66" opacity=".35"/>
+      <rect x="-6" y="-22" width="12" height="16" rx="3" fill="#FFDF9E" stroke="#5A3418" stroke-width="1"/>
+      <path d="M -9 -22 L 9 -22 L 0 -30 Z" fill="#5A3418"/>
+    </g>
+
+    <!-- poteau d'attache + cheval -->
+    <g stroke="#7C4A24" stroke-width="6" stroke-linecap="round">
+      <line x1="790" y1="470" x2="790" y2="518"/>
+      <line x1="840" y1="470" x2="840" y2="518"/>
+      <line x1="782" y1="478" x2="848" y2="478"/>
+    </g>
+    <g transform="translate(884,474) scale(.8)">
+      <ellipse cx="-4" cy="52" rx="48" ry="7" fill="#7C4A24" opacity=".15"/>
+      <!-- queue fournie -->
+      <g class="horse-tail">
+        <path d="M 32 -10 Q 47 -2 43 20 Q 41 32 34 39 Q 38 24 35 12 Q 33 2 28 -4 Z" fill="#6B4226" stroke="#5A3418" stroke-width="1"/>
+        <path d="M 36 2 Q 41 14 37 28" fill="none" stroke="#5A3418" stroke-width="1"/>
+      </g>
+      <!-- jambes d'arrière-plan -->
+      <g stroke="#9A6232" stroke-linecap="round" fill="none">
+        <path d="M -14 8 L -17 26 L -15 45" stroke-width="7"/>
+        <path d="M 14 8 L 18 26 L 16 45" stroke-width="7"/>
+      </g>
+      <g fill="#4E342E">
+        <rect x="-20" y="43" width="9" height="8" rx="1.5"/>
+        <rect x="11" y="43" width="9" height="8" rx="1.5"/>
+      </g>
+      <!-- corps -->
+      <ellipse cx="0" cy="0" rx="34" ry="18" fill="#B07743" stroke="#7C4A24" stroke-width="1.4"/>
+      <circle cx="21" cy="-2" r="15" fill="#B07743"/>
+      <circle cx="-21" cy="0" r="14" fill="#B07743"/>
+      <path d="M -2 17.5 q 9 3 17 -1" fill="none" stroke="#9A6232" stroke-width="1"/>
+      <!-- jambes de premier plan, articulées -->
+      <g stroke="#B07743" stroke-linecap="round" fill="none">
+        <path d="M -22 8 L -24 28 L -23 46" stroke-width="8"/>
+        <path d="M 22 8 L 25 28 L 23 46" stroke-width="8"/>
+      </g>
+      <path d="M -27 27 q 3 2 6 0 M 22 27 q 3 2 6 0" fill="none" stroke="#7C4A24" stroke-width="1"/>
+      <!-- balzane blanche -->
+      <path d="M -25.5 36 L -24.5 46 L -21.5 46 L -22.5 36 Z" fill="#F4E4BE"/>
+      <g fill="#4E342E">
+        <rect x="-28" y="44" width="10" height="8" rx="1.5"/>
+        <rect x="18" y="44" width="10" height="8" rx="1.5"/>
+      </g>
+      <!-- tapis de selle + selle + sangle -->
+      <path d="M -13 -16 L 12 -16 L 14 -1 L -15 -1 Z" fill="#A63A2E" stroke="#7C2A20" stroke-width="1"/>
+      <path d="M -13 -12 L 13 -12" stroke="#E8A93F" stroke-width="1" fill="none"/>
+      <path d="M -10 -18 Q 0 -23 10 -18 L 11 -6 Q 0 -10 -9 -6 Z" fill="#8A5A3C" stroke="#5A3418" stroke-width="1"/>
+      <path d="M -9 -19 q -3 -2 -2 -5 q 3 0 4 4" fill="#5A3418"/>
+      <path d="M -14 -2 Q -16 8 -14 15" fill="none" stroke="#5A3418" stroke-width="1.4"/>
+      <!-- encolure -->
+      <path d="M -18 -8 Q -28 -22 -34 -38 L -20 -46 Q -12 -28 -6 -12 Z" fill="#B07743" stroke="#7C4A24" stroke-width="1.4"/>
+      <!-- tête, chanfrein et naseaux -->
+      <path d="M -27 -50 Q -36 -53 -44 -49 Q -52 -45 -53 -38 Q -53 -34 -48 -33 L -38 -34 Q -30 -37 -26 -42 Z" fill="#B07743" stroke="#7C4A24" stroke-width="1.4"/>
+      <path d="M -48 -41 Q -56 -41 -58 -36 Q -59 -32 -54 -31 L -47 -32 Z" fill="#C68E4E" stroke="#7C4A24" stroke-width="1"/>
+      <circle cx="-55" cy="-35" r="1.1" fill="#3B2417"/>
+      <path d="M -53 -31.6 q 2.6 1.4 5.2 .4" fill="none" stroke="#7C4A24" stroke-width="1"/>
+      <!-- liste blanche sur le chanfrein -->
+      <path d="M -34 -50 Q -44 -46 -50 -39 Q -49 -36 -46 -37 Q -40 -44 -31.6 -47.6 Z" fill="#F4E4BE" opacity=".85"/>
+      <!-- œil -->
+      <ellipse cx="-38" cy="-44" rx="2.4" ry="2.8" fill="#FFFFFF"/>
+      <circle cx="-38.4" cy="-43.6" r="1.4" fill="#3B2417"/>
+      <path d="M -41.5 -47.4 q 3 -1.6 5.5 -.6" fill="none" stroke="#7C4A24" stroke-width="1"/>
+      <!-- oreilles -->
+      <path d="M -30 -52 l 1.6 -9 5.4 6.6 Z" fill="#B07743" stroke="#7C4A24" stroke-width="1"/>
+      <path d="M -24 -50.6 l 3.6 -8 4.4 7.4 Z" fill="#9A6232" stroke="#7C4A24" stroke-width="1"/>
+      <!-- crinière et toupet -->
+      <path d="M -24 -52 Q -18 -44 -14 -34 Q -10 -24 -6 -12 L -14 -10 Q -18 -24 -23 -34 Q -27 -42 -30 -48 Z" fill="#6B4226"/>
+      <path d="M -25 -45 q 4 1 5 6 M -20 -33 q 4 1 5 6 M -16 -22 q 4 1 5 6" stroke="#5A3418" stroke-width="1" fill="none"/>
+      <path d="M -30 -52 q -6 -3 -4 -9 q 5 2 7.4 6.6 Z" fill="#6B4226"/>
+      <!-- licol et longe vers la barre d'attache -->
+      <path d="M -47 -44 L -45 -36 M -52 -40 Q -47 -41 -44 -40" fill="none" stroke="#5A2018" stroke-width="1.4"/>
+      <path d="M -52 -38 Q -50 -49 -44 -55" fill="none" stroke="#5A2018" stroke-width="1.4"/>
+    </g>
+
+    <!-- habitant bougon sur son banc -->
+    <g transform="translate(952,452)">
+      <ellipse cx="30" cy="80" rx="38" ry="5" fill="#7C4A24" opacity=".15"/>
+      <g stroke="#5A3418" stroke-width="2.2">
+        <line x1="4" y1="46" x2="4" y2="78"/><line x1="58" y1="46" x2="58" y2="78"/>
+      </g>
+      <rect x="-2" y="40" width="66" height="8" rx="2" fill="#B5773F" stroke="#7C4A24" stroke-width="1"/>
+      <rect x="-2" y="16" width="6" height="26" fill="#B5773F" stroke="#7C4A24" stroke-width="1"/>
+      <g>
+        <!-- jambes, l'une croisée sur l'autre -->
+        <path d="M 25 40 L 24 58 L 26 72 L 32 72 L 30 58 L 30 42 Z" fill="#4A5A6A"/>
+        <path d="M 36 40 L 38 52 L 31 62 L 35 66 L 44 55 L 42 40 Z" fill="#54647A"/>
+        <path d="M 24 70 L 32 70 L 33 76 L 20 76 Q 17 72 24 70 Z" fill="#5A3418"/>
+        <path d="M 34 61 L 39 57 L 44 62 Q 42 67 37 65 Z" fill="#5A3418"/>
+        <!-- torse : chemise + gilet + chaîne de montre -->
+        <rect x="19" y="12" width="24" height="30" rx="6" fill="#8A7A5E"/>
+        <path d="M 19 14 L 27 16 L 27 42 L 19 42 Z M 43 14 L 35 16 L 35 42 L 43 42 Z" fill="#6E5A46"/>
+        <circle cx="31" cy="22" r=".9" fill="#3B2417"/><circle cx="31" cy="27" r=".9" fill="#3B2417"/>
+        <path d="M 36 25 q 4 3 5 8" stroke="#C9B27E" stroke-width="1" fill="none"/>
+        <circle cx="41.4" cy="34" r="1.4" fill="#C9B27E"/>
+        <!-- bras croisés, mains visibles -->
+        <path d="M 20 20 Q 14 26 20 31 L 38 30" fill="none" stroke="#8A7A5E" stroke-width="5" stroke-linecap="round"/>
+        <path d="M 42 20 Q 48 26 42 31 L 26 26" fill="none" stroke="#7E6E52" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="39" cy="30" r="2.6" fill="#E8B88A"/><circle cx="27" cy="26" r="2.6" fill="#E8B88A"/>
+        <!-- tête : barbe grise, sourcils froncés, chapeau enfoncé -->
+        <circle cx="31" cy="3" r="8.5" fill="#E8B88A"/>
+        <path d="M 23 8 Q 25 16 31 15 Q 37 16 39 8 Q 37 13 31 12.5 Q 25 13 23 8 Z" fill="#B8B0A0"/>
+        <path d="M 27 8.6 q 4 -2 8 0" fill="none" stroke="#8C8474" stroke-width="1.4"/>
+        <path d="M 28 11.6 q 3 -2.2 6 0" fill="none" stroke="#3B2417" stroke-width="1" stroke-linecap="round"/>
+        <circle cx="27.5" cy="1.5" r="1.1" fill="#3B2417"/><circle cx="34.5" cy="1.5" r="1.1" fill="#3B2417"/>
+        <path d="M 24.5 -1.5 l 5 1.8 M 37.5 -1.5 l -5 1.8" stroke="#3B2417" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M 30.4 4.5 q 1.6 2 0 3" fill="none" stroke="#C9906B" stroke-width="1"/>
+        <ellipse cx="24" cy="6" rx="1.4" ry="1" fill="#D89A8A" opacity=".6"/>
+        <ellipse cx="31" cy="-4" rx="13.5" ry="3" fill="#3B2417"/>
+        <path d="M 24 -4 L 25 -13 Q 31 -16 37 -13 L 38 -4 Z" fill="#3B2417"/>
+        <rect x="24.5" y="-8" width="13" height="2.2" fill="#6E5A46"/>
+        <!-- pipe -->
+        <path d="M 36 11 L 42 13.6" stroke="#5A3418" stroke-width="1.4"/>
+        <rect x="41" y="12" width="4" height="5" rx="1" fill="#5A3418"/>
+        <circle class="smoke" cx="43" cy="8" r="2.6" fill="#FFF4DA"/>
+        <circle class="smoke s2" cx="43" cy="8" r="2" fill="#FFF4DA"/>
+        <circle class="smoke s3" cx="43" cy="8" r="3" fill="#FFF4DA"/>
+      </g>
+    </g>
+
+    <!-- chien endormi devant le bureau du shérif -->
+    <g transform="translate(300,514)">
+      <ellipse cx="0" cy="10" rx="26" ry="5" fill="#7C4A24" opacity=".15"/>
+      <!-- queue enroulée sur la hanche -->
+      <path d="M 19 4 q 10 -1 11 -8 q 1 -7 -6 -8 q -5 -1 -6 4" fill="none" stroke="#6B4226" stroke-width="3.5" stroke-linecap="round"/>
+      <path d="M 24 -10 q 3 1 3 4" stroke="#A87A50" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+      <!-- arrière-train + corps -->
+      <ellipse cx="10" cy="-1" rx="12" ry="9" fill="#8A5A3C" stroke="#6B4226" stroke-width="1"/>
+      <ellipse cx="0" cy="1" rx="17" ry="8" fill="#8A5A3C" stroke="#6B4226" stroke-width="1"/>
+      <!-- taches sur le pelage -->
+      <ellipse cx="9" cy="-2" rx="5" ry="3.6" fill="#6B4226" opacity=".8"/>
+      <ellipse cx="-6" cy="4" rx="3" ry="2" fill="#6B4226" opacity=".6"/>
+      <!-- pattes avant allongées, coussinets -->
+      <path d="M -12 6 q -8 1 -13 3" stroke="#8A5A3C" stroke-width="4.4" stroke-linecap="round" fill="none"/>
+      <path d="M -10 8.6 q -7 1 -11 3" stroke="#7A4E32" stroke-width="4.4" stroke-linecap="round" fill="none"/>
+      <ellipse cx="-26" cy="9.4" rx="2.6" ry="1.8" fill="#6B4226"/>
+      <ellipse cx="-22" cy="12" rx="2.6" ry="1.8" fill="#6B4226"/>
+      <!-- patte arrière repliée sous le corps -->
+      <path d="M 14 6 q -4 4 -9 3" stroke="#7A4E32" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <!-- tête posée au sol -->
+      <circle cx="-16" cy="-3" r="7.5" fill="#8A5A3C" stroke="#6B4226" stroke-width="1"/>
+      <!-- museau + truffe -->
+      <path d="M -22 -2 q -5 0 -6 3 q -.5 3 3 3.4 l 4 -.4 Z" fill="#A87A50" stroke="#6B4226" stroke-width="1"/>
+      <ellipse cx="-27" cy="0" rx="2" ry="1.6" fill="#3B2417"/>
+      <path d="M -24 2.6 q 2 1.4 4 .6" stroke="#6B4226" stroke-width="1" fill="none" stroke-linecap="round"/>
+      <!-- oreille tombante -->
+      <path d="M -18 -10 q -6 -2 -7 5 q -.5 5 4 6 q 3 .5 4 -3 Z" fill="#6B4226" stroke="#5A3418" stroke-width="1"/>
+      <!-- œil fermé + sourcil -->
+      <path d="M -14 -4 q 2 1.6 4 0" stroke="#3B2417" stroke-width="1" fill="none" stroke-linecap="round"/>
+      <path d="M -15 -7.4 q 2 -1 3.6 -.4" stroke="#6B4226" stroke-width="1" fill="none" stroke-linecap="round"/>
+      <!-- collier rouge à médaille -->
+      <path d="M -10 -9 q 4 4 2 9" stroke="#A63A2E" stroke-width="2.6" fill="none"/>
+      <circle cx="-8" cy="1.4" r="1.7" fill="#E8A93F" stroke="#7C4A24" stroke-width=".8"/>
+      <!-- respiration -->
+      <text x="-32" y="-16" class="small-sign" font-size="10" fill="#7C4A24" opacity=".7">z</text>
+      <text x="-26" y="-24" class="small-sign" font-size="8" fill="#7C4A24" opacity=".55">z</text>
+      <text x="-21" y="-31" class="small-sign" font-size="6.5" fill="#7C4A24" opacity=".4">z</text>
+    </g>
+
+    <!-- poules qui picorent -->
+    <g class="chicken" transform="translate(1002,514)">
+      <ellipse cx="0" cy="10" rx="12" ry="3" fill="#7C4A24" opacity=".15"/>
+      <ellipse cx="0" cy="0" rx="9" ry="7" fill="#F4E4BE" stroke="#7C4A24" stroke-width="1"/>
+      <path d="M 6 -2 q 4 -4 2 -7" fill="none" stroke="#7C4A24" stroke-width="1"/>
+      <circle cx="-9" cy="-8" r="4.5" fill="#F4E4BE" stroke="#7C4A24" stroke-width="1"/>
+      <path d="M -13 -8 l -5 2 5 2 Z" fill="#E8A93F"/>
+      <circle cx="-9" cy="-13" r="2" fill="#A63A2E"/>
+      <circle cx="-10" cy="-9" r="1.1" fill="#3B2417"/>
+      <g stroke="#E8A93F" stroke-width="1"><line x1="-3" y1="7" x2="-3" y2="12"/><line x1="3" y1="7" x2="3" y2="12"/></g>
+    </g>
+    <g class="chicken c2" transform="translate(1042,522) scale(-1,1)">
+      <ellipse cx="0" cy="10" rx="12" ry="3" fill="#7C4A24" opacity=".15"/>
+      <ellipse cx="0" cy="0" rx="9" ry="7" fill="#E0C68C" stroke="#7C4A24" stroke-width="1"/>
+      <path d="M 6 -2 q 4 -4 2 -7" fill="none" stroke="#7C4A24" stroke-width="1"/>
+      <circle cx="-9" cy="-8" r="4.5" fill="#E0C68C" stroke="#7C4A24" stroke-width="1"/>
+      <path d="M -13 -8 l -5 2 5 2 Z" fill="#E8A93F"/>
+      <circle cx="-9" cy="-13" r="2" fill="#A63A2E"/>
+      <circle cx="-10" cy="-9" r="1.1" fill="#3B2417"/>
+      <g stroke="#E8A93F" stroke-width="1"><line x1="-3" y1="7" x2="-3" y2="12"/><line x1="3" y1="7" x2="3" y2="12"/></g>
+    </g>
+  </g>
+  <!-- ======== INTÉRIEUR DU SALOON (x 3200-4400) ======== -->
+  <g transform="translate(3200,0)">
+    <rect x="0" y="0" width="1200" height="640" fill="#7E3B30"/>
+    <!-- mur : lambris + papier peint -->
+    <rect x="0" y="0" width="1200" height="470" fill="#8A4438"/>
+    <g stroke="#7A392E" stroke-width="2">
+      <line x1="80" y1="0" x2="80" y2="470"/><line x1="240" y1="0" x2="240" y2="470"/>
+      <line x1="400" y1="0" x2="400" y2="470"/><line x1="960" y1="0" x2="960" y2="470"/><line x1="1120" y1="0" x2="1120" y2="470"/>
+    </g>
+    <rect x="0" y="0" width="1200" height="44" fill="#6E2F26"/>
+    <rect x="0" y="40" width="1200" height="8" fill="#E9D6A6" opacity=".5"/>
+    <!-- plancher -->
+    <rect x="0" y="470" width="1200" height="170" fill="#B5773F"/>
+    <g stroke="#9A6232" stroke-width="2">
+      <line x1="0" y1="500" x2="1200" y2="500"/><line x1="0" y1="540" x2="1200" y2="540"/>
+      <line x1="0" y1="590" x2="1200" y2="590"/>
+    </g>
+    <g stroke="#9A6232" stroke-width="1.4" opacity=".6">
+      <line x1="150" y1="470" x2="120" y2="640"/><line x1="450" y1="470" x2="430" y2="640"/>
+      <line x1="750" y1="470" x2="760" y2="640"/><line x1="1050" y1="470" x2="1080" y2="640"/>
+    </g>
+    <rect x="0" y="460" width="1200" height="12" fill="#7C4A24"/>
+    <!-- lampes à pétrole suspendues -->
+    <g>
+      <line x1="440" y1="44" x2="440" y2="96" stroke="#3B2417" stroke-width="2.6"/>
+      <circle cx="440" cy="112" r="15" fill="#FFDD66" opacity=".4"/>
+      <path d="M 432 100 L 448 100 L 440 92 Z" fill="#5A3418"/>
+      <rect x="433" y="100" width="14" height="19" rx="5" fill="#FFDF9E" stroke="#5A3418" stroke-width="1.4"/>
+      <path d="M 434 119 q 6 5 12 0" fill="none" stroke="#5A3418" stroke-width="1.4"/>
+      <line x1="760" y1="44" x2="760" y2="96" stroke="#3B2417" stroke-width="2.6"/>
+      <circle cx="760" cy="112" r="15" fill="#FFDD66" opacity=".4"/>
+      <path d="M 752 100 L 768 100 L 760 92 Z" fill="#5A3418"/>
+      <rect x="753" y="100" width="14" height="19" rx="5" fill="#FFDF9E" stroke="#5A3418" stroke-width="1.4"/>
+      <path d="M 754 119 q 6 5 12 0" fill="none" stroke="#5A3418" stroke-width="1.4"/>
+    </g>
+    <!-- porte de sortie (vers la rue) -->
+    <g>
+      <rect x="70" y="300" width="110" height="160" fill="#FFDF9E" stroke="#5A3418" stroke-width="2.2"/>
+      <path d="M 90 460 L 125 300 M 160 460 L 135 300" stroke="#F8A55B" stroke-width="10" opacity=".5"/>
+      <rect x="76" y="330" width="46" height="80" rx="5" fill="#E9D6A6" stroke="#7C4A24" stroke-width="1.4"/>
+      <rect x="128" y="330" width="46" height="80" rx="5" fill="#E9D6A6" stroke="#7C4A24" stroke-width="1.4"/>
+      <g stroke="#C9B27E" stroke-width="1.4">
+        <line x1="88" y1="338" x2="88" y2="402"/><line x1="100" y1="338" x2="100" y2="402"/><line x1="112" y1="338" x2="112" y2="402"/>
+        <line x1="140" y1="338" x2="140" y2="402"/><line x1="152" y1="338" x2="152" y2="402"/><line x1="164" y1="338" x2="164" y2="402"/>
+      </g>
+      <rect x="82" y="262" width="86" height="26" rx="4" fill="#E9D6A6" stroke="#7C4A24" stroke-width="1.8"/>
+      <text x="125" y="281" text-anchor="middle" class="sign" font-size="14" fill="#A63A2E">SORTIE</text>
+      <!-- fer à cheval porte-bonheur, ouvert vers le haut -->
+      <g transform="translate(125,248)" fill="none" stroke="#C9B27E" stroke-width="3" stroke-linecap="round">
+        <path d="M -6 -4 A 7.5 7.5 0 1 0 6 -4"/>
+      </g>
+    </g>
+    <!-- carafe et verres sur l'étagère -->
+    <g transform="translate(740,392)">
+      <path d="M -6 18 q -6 -8 -2 -14 q -3 -2 0 -4 l 4 0 l 0 -6 l 2 0 l 0 6 l 4 0 q 3 2 0 4 q 4 6 -2 14 Z" fill="#C8E0EA" opacity=".85" stroke="#33566B" stroke-width="1"/>
+      <rect x="8" y="8" width="6" height="10" rx="1" fill="#C8E0EA" opacity=".8" stroke="#33566B" stroke-width=".8"/>
+      <rect x="17" y="8" width="6" height="10" rx="1" fill="#C8E0EA" opacity=".8" stroke="#33566B" stroke-width=".8"/>
+    </g>
+    <!-- grand miroir + étagère à bouteilles (au-dessus du bar) -->
+    <rect x="500" y="298" width="400" height="112" fill="#A8C8D8" stroke="#7C4A24" stroke-width="4" opacity=".9"/>
+    <path d="M 520 402 L 610 306 M 560 402 L 668 306" stroke="#FFFFFF" stroke-width="7" opacity=".35"/>
+    <text x="700" y="342" text-anchor="middle" class="sign" font-size="24" fill="#A63A2E" opacity=".85">DOLLY'S</text>
+    <rect x="490" y="410" width="420" height="10" fill="#7C4A24"/>
+    <g>
+      <rect x="530" y="378" width="13" height="32" rx="3" fill="#5E8C4F"/>
+      <rect x="551" y="372" width="13" height="38" rx="3" fill="#A63A2E"/>
+      <rect x="572" y="382" width="13" height="28" rx="3" fill="#E8A93F"/>
+      <rect x="822" y="376" width="13" height="34" rx="3" fill="#8AB6C8"/>
+      <rect x="843" y="382" width="13" height="28" rx="3" fill="#5E8C4F"/>
+      <rect x="864" y="372" width="13" height="38" rx="3" fill="#A63A2E"/>
+      <g fill="#3B2417"><rect x="533" y="372" width="7" height="7"/><rect x="554" y="366" width="7" height="7"/>
+        <rect x="825" y="370" width="7" height="7"/><rect x="867" y="366" width="7" height="7"/></g>
+    </g>
+    <!-- Dolly derrière le comptoir -->
+    <g transform="translate(700,414)">
+      <circle cx="0" cy="-12" r="7" fill="#D8622B" stroke="#B84E20" stroke-width="1"/>
+      <path d="M -11 0 q -1 -14 11 -14 q 12 0 11 14 q -3 -8 -11 -8 q -8 0 -11 8" fill="#D8622B"/>
+      <circle cx="-10" cy="-4" r="3.4" fill="#D8622B"/><circle cx="10" cy="-4" r="3.4" fill="#D8622B"/>
+      <circle cx="0" cy="1" r="9.5" fill="#F6CBA0"/>
+      <path d="M -9 -3 q 4 -6 9 -5 q 5 -1 9 5 q -4 -3 -9 -3 q -5 0 -9 3" fill="#D8622B"/>
+      <ellipse cx="-4" cy="-0.5" rx="1.9" ry="2.4" fill="#FFFFFF"/><ellipse cx="4" cy="-0.5" rx="1.9" ry="2.4" fill="#FFFFFF"/>
+      <circle cx="-3.7" cy="0" r="1.1" fill="#3B2417"/><circle cx="4.3" cy="0" r="1.1" fill="#3B2417"/>
+      <path d="M -6.4 -3.6 q 2.4 -1.8 4.6 -.6 M 1.8 -4.2 q 2.2 -1.2 4.6 .6" fill="none" stroke="#B84E20" stroke-width="1" stroke-linecap="round"/>
+      <circle cx="-7" cy="4" r="1.8" fill="#EFA9A0" opacity=".65"/><circle cx="7" cy="4" r="1.8" fill="#EFA9A0" opacity=".65"/>
+      <path d="M -3.5 6.5 q 3.5 3.4 7 0 q -3.5 5 -7 0 Z" fill="#C0392B"/>
+      <circle cx="-9.5" cy="4" r="1.3" fill="#E8A93F"/><circle cx="9.5" cy="4" r="1.3" fill="#E8A93F"/>
+      <path d="M -3 9 L -3 13 L 3 13 L 3 9 Z" fill="#F6CBA0"/>
+      <line x1="-4" y1="13" x2="4" y2="13" stroke="#3B2417" stroke-width="1.4"/>
+      <path d="M -16 46 L -12 16 Q 0 10 12 16 L 16 46 Z" fill="#C94F7C" stroke="#96395C" stroke-width="1"/>
+      <g fill="#FBF0D8">
+        <circle cx="-8" cy="15.5" r="2"/><circle cx="-3.5" cy="13.6" r="2"/>
+        <circle cx="0" cy="13" r="2"/><circle cx="3.5" cy="13.6" r="2"/><circle cx="8" cy="15.5" r="2"/>
+      </g>
+      <g class="dolly-polish">
+        <path d="M 12 20 Q 22 24 26 34" fill="none" stroke="#C94F7C" stroke-width="4.6" stroke-linecap="round"/>
+        <circle cx="27" cy="37" r="3" fill="#F6CBA0"/>
+        <path d="M 24 40 l 6 0 l -1 10 l -4 0 Z" fill="#FBF0D8" opacity=".9"/>
+      </g>
+      <path d="M -12 20 Q -22 24 -26 34" fill="none" stroke="#C94F7C" stroke-width="4.6" stroke-linecap="round"/>
+      <circle cx="-27" cy="37" r="3" fill="#F6CBA0"/>
+    </g>
+    <!-- comptoir du bar (à hauteur de taille) -->
+    <rect x="480" y="452" width="440" height="15" rx="4" fill="#E9D6A6" stroke="#7C4A24" stroke-width="2.2"/>
+    <rect x="492" y="467" width="416" height="63" fill="#7C4A24" stroke="#5A3418" stroke-width="2.2"/>
+    <g stroke="#5A3418" stroke-width="1.4">
+      <line x1="560" y1="467" x2="560" y2="530"/><line x1="700" y1="467" x2="700" y2="530"/><line x1="840" y1="467" x2="840" y2="530"/>
+    </g>
+    <g stroke="#9A6232" stroke-width="2"><path d="M 510 480 h 30 v 34 h -30 Z M 620 480 h 30 v 34 h -30 Z M 760 480 h 30 v 34 h -30 Z M 860 480 h 30 v 34 h -30 Z" fill="none"/></g>
+    <!-- chopes sur le comptoir -->
+    <g>
+      <rect x="540" y="435" width="15" height="17" rx="2" fill="#E8A93F" stroke="#B87F2A" stroke-width="1.4"/>
+      <path d="M 555 439 q 8 4 0 9" fill="none" stroke="#B87F2A" stroke-width="2.2"/>
+      <ellipse cx="547.5" cy="434" rx="7.5" ry="2.8" fill="#FFF4DA"/>
+      <rect x="838" y="435" width="15" height="17" rx="2" fill="#E8A93F" stroke="#B87F2A" stroke-width="1.4"/>
+      <path d="M 853 439 q 8 4 0 9" fill="none" stroke="#B87F2A" stroke-width="2.2"/>
+      <ellipse cx="845.5" cy="434" rx="7.5" ry="2.8" fill="#FFF4DA"/>
+    </g>
+    <!-- table de poker + vrais clients -->
+    <g>
+      <ellipse cx="300" cy="528" rx="60" ry="9" fill="#3B2417" opacity=".2"/>
+      <!-- joueur 1 : chemise rouge, chapeau beige, moustache -->
+      <g transform="translate(248,446)">
+        <circle cx="0" cy="0" r="8" fill="#F2C094"/>
+        <circle cx="-2.6" cy="-1.4" r="1" fill="#3B2417"/><circle cx="2.6" cy="-1.4" r="1" fill="#3B2417"/>
+        <path d="M -4.6 -4 q 2 -1.2 4 -.4 M .6 -4.4 q 2 -.8 4 .4" stroke="#6B4226" stroke-width="1" fill="none" stroke-linecap="round"/>
+        <path d="M -4 3.6 q 4 2.6 8 0 q -4 4.4 -8 0 Z" fill="#6B4226"/>
+        <ellipse cx="0" cy="-7.2" rx="12" ry="2.8" fill="#C9955C"/>
+        <path d="M -7.4 -8.6 L -6.4 -15.6 Q 0 -18.2 6.4 -15.6 L 7.4 -8.6 Q 0 -11.4 -7.4 -8.6 Z" fill="#C9955C" stroke="#9A6232" stroke-width="1"/>
+        <rect x="-10" y="8" width="20" height="24" rx="6" fill="#A63A2E"/>
+        <path d="M -10 9 L -4 11 L -4 32 L -10 32 Z M 10 9 L 4 11 L 4 32 L 10 32 Z" fill="#7C2A20"/>
+        <path d="M 9 13 Q 17 17 16 25" stroke="#A63A2E" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <circle cx="16" cy="27" r="2.4" fill="#F2C094"/>
+        <g fill="#FBF0D8" stroke="#7C4A24" stroke-width=".8">
+          <rect x="13" y="19" width="8" height="11" rx="1" transform="rotate(14 17 24)"/>
+          <rect x="17" y="19" width="8" height="11" rx="1" transform="rotate(28 21 24)"/>
+        </g>
+      </g>
+      <!-- joueur 2 : gilet vert, chapeau noir -->
+      <g transform="translate(352,446) scale(-1,1)">
+        <circle cx="0" cy="0" r="8" fill="#E8B88A"/>
+        <circle cx="-2.6" cy="-1.4" r="1" fill="#3B2417"/><circle cx="2.6" cy="-1.4" r="1" fill="#3B2417"/>
+        <path d="M -4.6 -4.2 l 3.6 1.4 M 4.6 -4.2 l -3.6 1.4" stroke="#1E1A18" stroke-width="1.1" stroke-linecap="round"/>
+        <path d="M -3.4 4.6 q 3.4 1.6 6.8 0" stroke="#3B2417" stroke-width="1" fill="none" stroke-linecap="round"/>
+        <path d="M -6 6 q 6 3.4 12 0 l 0 2 q -6 3 -12 0 Z" fill="#4E4A46" opacity=".5"/>
+        <ellipse cx="0" cy="-7.2" rx="12" ry="2.8" fill="#1E1A18"/>
+        <path d="M -7.4 -8.6 L -6.4 -15.6 Q 0 -18.2 6.4 -15.6 L 7.4 -8.6 Q 0 -11.4 -7.4 -8.6 Z" fill="#1E1A18"/>
+        <rect x="-10" y="8" width="20" height="24" rx="6" fill="#D9BC85"/>
+        <path d="M -10 9 L -4 11 L -4 32 L -10 32 Z M 10 9 L 4 11 L 4 32 L 10 32 Z" fill="#5A6E5A"/>
+        <path d="M 9 13 Q 17 17 16 25" stroke="#D9BC85" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <circle cx="16" cy="27" r="2.4" fill="#E8B88A"/>
+        <g fill="#FBF0D8" stroke="#7C4A24" stroke-width=".8">
+          <rect x="13" y="19" width="8" height="11" rx="1" transform="rotate(14 17 24)"/>
+          <rect x="17" y="19" width="8" height="11" rx="1" transform="rotate(28 21 24)"/>
+        </g>
+      </g>
+      <ellipse cx="300" cy="478" rx="62" ry="13" fill="#5E8C4F" stroke="#7C4A24" stroke-width="2.2"/>
+      <rect x="294" y="488" width="12" height="42" fill="#7C4A24"/>
+      <g fill="#FBF0D8" stroke="#7C4A24" stroke-width="1">
+        <rect x="272" y="470" width="12" height="16" rx="2" transform="rotate(-12 278 478)"/>
+        <rect x="312" y="468" width="12" height="16" rx="2" transform="rotate(10 318 476)"/>
+      </g>
+      <rect x="292" y="464" width="9" height="12" rx="2" fill="#5A8C46" stroke="#3B5E2E" stroke-width="1"/>
+    </g>
+    <!-- piano + pianiste (à l'échelle) -->
+    <g>
+      <ellipse cx="1060" cy="522" rx="70" ry="9" fill="#3B2417" opacity=".2"/>
+      <rect x="1000" y="352" width="140" height="128" rx="6" fill="#5A3418" stroke="#3B2417" stroke-width="2.2"/>
+      <rect x="1010" y="364" width="120" height="42" rx="4" fill="#7C4A24"/>
+      <rect x="996" y="436" width="148" height="14" fill="#3B2417"/>
+      <g fill="#FBF0D8"><rect x="1002" y="438" width="136" height="9" rx="2"/></g>
+      <g fill="#3B2417">
+        <rect x="1012" y="438" width="5" height="6"/><rect x="1026" y="438" width="5" height="6"/><rect x="1040" y="438" width="5" height="6"/>
+        <rect x="1060" y="438" width="5" height="6"/><rect x="1074" y="438" width="5" height="6"/><rect x="1094" y="438" width="5" height="6"/>
+        <rect x="1108" y="438" width="5" height="6"/><rect x="1122" y="438" width="5" height="6"/>
+      </g>
+      <g>
+        <circle cx="1070" cy="404" r="9" fill="#F2C094"/>
+        <path d="M 1061 404 a 9 9 0 0 1 18 0 Z" fill="#6B4226"/>
+        <circle cx="1063" cy="406" r="1.6" fill="#F2C094"/><circle cx="1077" cy="406" r="1.6" fill="#F2C094"/>
+        <rect x="1057" y="413" width="26" height="28" rx="7" fill="#8A5A3C"/>
+        <path d="M 1057 414 L 1063 416 L 1063 441 L 1057 441 Z M 1083 414 L 1077 416 L 1077 441 L 1083 441 Z" fill="#5A6E5A"/>
+        <rect x="1053" y="397" width="34" height="3.2" rx="1.5" fill="#3B2417"/><rect x="1061" y="389" width="18" height="9" rx="3" fill="#3B2417"/>
+        <path d="M 1057 420 q -10 6 -9 20" fill="none" stroke="#FBF0D8" stroke-width="4.4" stroke-linecap="round"/>
+        <path d="M 1083 420 q 10 6 9 20" fill="none" stroke="#FBF0D8" stroke-width="4.4" stroke-linecap="round"/>
+        <circle cx="1048" cy="442" r="2.6" fill="#F2C094"/><circle cx="1092" cy="442" r="2.6" fill="#F2C094"/>
+      </g>
+      <rect x="1052" y="470" width="40" height="9" rx="3" fill="#7C4A24"/>
+      <g stroke="#7C4A24" stroke-width="4"><line x1="1058" y1="479" x2="1054" y2="514"/><line x1="1086" y1="479" x2="1090" y2="514"/></g>
+      <g fill="#3B2417" class="small-sign">
+        <text x="1150" y="336" font-size="17">&#9834;</text>
+        <text x="1166" y="312" font-size="13">&#9835;</text>
+        <text x="1140" y="294" font-size="11">&#9834;</text>
+      </g>
+    </g>
+    <!-- plantes en pot du saloon -->
+    <g transform="translate(462,462)">
+      <path d="M -9 24 l 3 -18 q 6 -3 12 0 l 3 18 Z" fill="#C9713F" stroke="#7C4A24" stroke-width="1.4"/>
+      <path d="M 0 8 Q -3 -10 -16 -16 M 0 8 Q 0 -14 2 -22 M 0 8 Q 3 -10 16 -16 M 0 8 Q -7 -4 -22 -6 M 0 8 Q 7 -4 22 -6"
+        fill="none" stroke="#5E8C4F" stroke-width="3.4" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(962,458)">
+      <path d="M -8 22 l 2.6 -16 q 5.4 -3 10.8 0 l 2.6 16 Z" fill="#C9713F" stroke="#7C4A24" stroke-width="1.4"/>
+      <path d="M 0 6 Q -2 -8 -12 -12 M 0 6 Q 0 -12 0 -18 M 0 6 Q 2 -8 12 -12" fill="none" stroke="#5E8C4F" stroke-width="3" stroke-linecap="round"/>
+    </g>
+    <!-- escalier -->
+    <g fill="#7C4A24" stroke="#5A3418" stroke-width="1.4">
+      <rect x="1160" y="440" width="40" height="30"/><rect x="1172" y="410" width="28" height="30"/>
+      <rect x="1184" y="380" width="16" height="30"/>
+    </g>
+    <!-- chat roulé en boule sur l'escalier -->
+    <g transform="translate(1178,404)">
+      <ellipse cx="0" cy="0" rx="11" ry="6.5" fill="#8C8C8C" stroke="#6E6E6E" stroke-width="1"/>
+      <circle cx="-8" cy="-2" r="4.5" fill="#8C8C8C" stroke="#6E6E6E" stroke-width="1"/>
+      <path d="M -11.5 -5 l -1.5 -4.5 4 2 Z M -4.5 -5.4 l 1 -4.6 -3.8 1.8 Z" fill="#6E6E6E"/>
+      <path d="M 8 2 q 7 -1 6 -7" fill="none" stroke="#6E6E6E" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M -10 -1 q 1.6 1 3.2 0" stroke="#3B2417" stroke-width=".9" fill="none"/>
+    </g>
+    <!-- trophée longhorn au-dessus du miroir -->
+    <g transform="translate(700,116)">
+      <path d="M -14 4 Q -46 2 -66 -16 Q -70 -20 -66 -22 Q -44 -12 -16 -8 Z" fill="#E0C68C" stroke="#B89A5E" stroke-width="1.4"/>
+      <path d="M 14 4 Q 46 2 66 -16 Q 70 -20 66 -22 Q 44 -12 16 -8 Z" fill="#E0C68C" stroke="#B89A5E" stroke-width="1.4"/>
+      <ellipse cx="0" cy="4" rx="15" ry="11" fill="#F4E4BE" stroke="#C9B27E" stroke-width="1.4"/>
+      <circle cx="-5" cy="2" r="2" fill="#C68E4E"/><circle cx="5" cy="2" r="2" fill="#C68E4E"/>
+      <path d="M -4 11 q 4 2.6 8 0" stroke="#C9B27E" stroke-width="1.2" fill="none"/>
+    </g>
+    <!-- portrait ovale au mur -->
+    <g transform="translate(250,190)">
+      <ellipse cx="0" cy="0" rx="34" ry="44" fill="#E8A93F" stroke="#B87F2A" stroke-width="2.6"/>
+      <ellipse cx="0" cy="0" rx="27" ry="37" fill="#F4E4BE"/>
+      <circle cx="0" cy="-6" r="9" fill="#F6CBA0"/>
+      <path d="M -9 -8 q 2 -10 9 -10 q 7 0 9 10 q -5 -5 -9 -5 q -4 0 -9 5" fill="#6B4226"/>
+      <circle cx="0" cy="-19" r="4" fill="#6B4226"/>
+      <circle cx="-3" cy="-7" r="1" fill="#3B2417"/><circle cx="3" cy="-7" r="1" fill="#3B2417"/>
+      <path d="M -2 -2.6 q 2 1.8 4 0" stroke="#3B2417" stroke-width=".9" fill="none"/>
+      <path d="M -12 22 Q -8 4 0 5 Q 8 4 12 22 Z" fill="#96395C"/>
+      <path d="M -6 8 h 12" stroke="#FBF0D8" stroke-width="1.2"/>
+    </g>
+    <!-- tarif au mur -->
+    <g transform="translate(952,196) rotate(2)">
+      <rect x="-46" y="-32" width="92" height="70" fill="#E9D6A6" stroke="#7C4A24" stroke-width="1.8"/>
+      <circle cx="0" cy="-26" r="2" fill="#7C4A24"/>
+      <text x="0" y="-12" text-anchor="middle" class="sign" font-size="12" fill="#A63A2E">TARIF</text>
+      <text x="0" y="6" text-anchor="middle" class="small-sign" font-size="9.5" fill="#5A3418">WHISKY&#8230; 10&cent;</text>
+      <text x="0" y="20" text-anchor="middle" class="small-sign" font-size="9.5" fill="#5A3418">BAIN&#8230; 25&cent;</text>
+      <text x="0" y="33" text-anchor="middle" class="small-sign" font-size="8" fill="#A63A2E">cr&eacute;dit : JAMAIS</text>
+    </g>
+    <!-- tabourets de bar -->
+    <g>
+      <g transform="translate(548,0)">
+        <ellipse cx="0" cy="428" rx="15" ry="5" fill="#8A5A3C" stroke="#5A3418" stroke-width="1.4"/>
+        <g stroke="#5A3418" stroke-width="3"><line x1="-11" y1="431" x2="-14" y2="470"/><line x1="11" y1="431" x2="14" y2="470"/><line x1="0" y1="432" x2="0" y2="470"/></g>
+      </g>
+      <g transform="translate(862,0)">
+        <ellipse cx="0" cy="428" rx="15" ry="5" fill="#8A5A3C" stroke="#5A3418" stroke-width="1.4"/>
+        <g stroke="#5A3418" stroke-width="3"><line x1="-11" y1="431" x2="-14" y2="470"/><line x1="11" y1="431" x2="14" y2="470"/><line x1="0" y1="432" x2="0" y2="470"/></g>
+      </g>
+      <!-- un tabouret renversé, trace de bagarre -->
+      <g transform="translate(948,462) rotate(76)">
+        <ellipse cx="0" cy="-20" rx="14" ry="4.6" fill="#8A5A3C" stroke="#5A3418" stroke-width="1.4"/>
+        <g stroke="#5A3418" stroke-width="3"><line x1="-10" y1="-17" x2="-13" y2="16"/><line x1="10" y1="-17" x2="13" y2="16"/></g>
+      </g>
+    </g>
+    <!-- crachoir en laiton -->
+    <g transform="translate(452,458)">
+      <path d="M -10 0 q 0 -12 10 -12 q 10 0 10 12 l -3 8 l -14 0 Z" fill="#E8A93F" stroke="#B87F2A" stroke-width="1.4"/>
+      <ellipse cx="0" cy="-12" rx="7" ry="2.6" fill="#B87F2A"/>
+    </g>
+    <!-- jetons de poker + verre sur la table -->
+    <g>
+      <g stroke="#7C4A24" stroke-width=".8">
+        <rect x="280" y="472" width="9" height="3" rx="1" fill="#A63A2E"/><rect x="280" y="469" width="9" height="3" rx="1" fill="#E9D6A6"/>
+        <rect x="280" y="466" width="9" height="3" rx="1" fill="#A63A2E"/>
+        <rect x="316" y="473" width="9" height="3" rx="1" fill="#4A7A8C"/><rect x="316" y="470" width="9" height="3" rx="1" fill="#E9D6A6"/>
+      </g>
+      <path d="M 334 466 l 5 0 l -1 9 l -3 0 Z" fill="#FBF0D8" opacity=".85"/>
+    </g>
+    <!-- sciure au sol -->
+    <g fill="#E0C68C" opacity=".35">
+      <ellipse cx="380" cy="560" rx="34" ry="7"/><ellipse cx="760" cy="600" rx="40" ry="8"/><ellipse cx="980" cy="545" rx="26" ry="6"/>
+    </g>
+    <!-- portemanteau près de l'entrée -->
+    <g transform="translate(212,340)">
+      <line x1="0" y1="0" x2="0" y2="130" stroke="#5A3418" stroke-width="4"/>
+      <path d="M 0 6 l -14 -8 M 0 6 l 14 -8 M 0 22 l -12 8 M 0 22 l 12 8" stroke="#5A3418" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <ellipse cx="-15" cy="-6" rx="10" ry="2.6" fill="#4E342E"/>
+      <path d="M -21 -7.4 L -20 -14 Q -15 -16.4 -10 -14 L -9 -7.4 Z" fill="#4E342E"/>
+      <path d="M 12 30 q 8 22 2 44 l -12 0 q -4 -24 -2 -44 Z" fill="#8A7A5E" stroke="#6E5A46" stroke-width="1"/>
+    </g>
+  </g>
+
+  <!-- ======== INTÉRIEUR DU BUREAU DU SHÉRIF (x 4700-5900) ======== -->
+  <g transform="translate(4700,0)">
+    <rect x="0" y="0" width="1200" height="640" fill="#6E5138"/>
+    <rect x="0" y="0" width="1200" height="470" fill="#9A6232"/>
+    <g stroke="#8A5A3C" stroke-width="2">
+      <line x1="0" y1="90" x2="1200" y2="90"/><line x1="0" y1="180" x2="1200" y2="180"/>
+      <line x1="0" y1="270" x2="1200" y2="270"/><line x1="0" y1="360" x2="1200" y2="360"/>
+    </g>
+    <rect x="0" y="470" width="1200" height="170" fill="#B5773F"/>
+    <g stroke="#9A6232" stroke-width="2">
+      <line x1="0" y1="505" x2="1200" y2="505"/><line x1="0" y1="550" x2="1200" y2="550"/><line x1="0" y1="600" x2="1200" y2="600"/>
+    </g>
+    <rect x="0" y="460" width="1200" height="12" fill="#7C4A24"/>
+    <!-- porte de sortie -->
+    <g>
+      <rect x="70" y="330" width="100" height="150" fill="#FFDF9E" stroke="#5A3418" stroke-width="2.2"/>
+      <path d="M 88 480 L 116 330 M 150 480 L 128 330" stroke="#F8A55B" stroke-width="9" opacity=".5"/>
+      <rect x="78" y="294" width="86" height="26" rx="4" fill="#E9D6A6" stroke="#7C4A24" stroke-width="1.8"/>
+      <text x="121" y="313" text-anchor="middle" class="sign" font-size="14" fill="#A63A2E">SORTIE</text>
+    </g>
+    <!-- fenêtre sur la rue -->
+    <rect x="230" y="326" width="84" height="72" fill="#FFD98E" stroke="#5A3418" stroke-width="2.2"/>
+    <line x1="272" y1="326" x2="272" y2="398" stroke="#5A3418" stroke-width="1.4"/>
+    <line x1="230" y1="362" x2="314" y2="362" stroke="#5A3418" stroke-width="1.4"/>
+    <!-- petite pendule murale -->
+    <g transform="translate(352,300)">
+      <circle r="14" fill="#FBF0D8" stroke="#5A3418" stroke-width="2.2"/>
+      <line x1="0" y1="0" x2="0" y2="-8" stroke="#3B2417" stroke-width="1.4" stroke-linecap="round"/>
+      <line x1="0" y1="0" x2="6" y2="3" stroke="#3B2417" stroke-width="1.4" stroke-linecap="round"/>
+      <circle r="1.4" fill="#3B2417"/>
+    </g>
+    <!-- mur d'affiches WANTED -->
+    <g transform="translate(392,318) rotate(-2)">
+      <rect width="58" height="76" fill="#F4E4BE" stroke="#7C4A24" stroke-width="1.8"/>
+      <text x="29" y="16" text-anchor="middle" class="small-sign" font-size="11" fill="#7C4A24">WANTED</text>
+      <circle cx="29" cy="37" r="12" fill="#D8A070"/>
+      <path d="M 20 30 l 8 3 M 38 30 l -8 3" stroke="#1E1A18" stroke-width="1.8" stroke-linecap="round"/>
+      <ellipse cx="29" cy="25" rx="17" ry="3.6" fill="#1E1A18"/>
+      <rect x="19" y="13" width="20" height="9" fill="#1E1A18"/>
+      <text x="29" y="64" text-anchor="middle" class="small-sign" font-size="9" fill="#A63A2E">MAC BLAIN</text>
+      <text x="29" y="72" text-anchor="middle" class="small-sign" font-size="7" fill="#7C4A24">$5000</text>
+    </g>
+    <g transform="translate(474,330) rotate(2)">
+      <rect width="42" height="56" fill="#F4E4BE" stroke="#7C4A24" stroke-width="1.4"/>
+      <text x="21" y="13" text-anchor="middle" class="small-sign" font-size="8" fill="#7C4A24">WANTED</text>
+      <circle cx="21" cy="27" r="8" fill="#C68E4E"/>
+      <text x="21" y="49" text-anchor="middle" class="small-sign" font-size="6.5" fill="#A63A2E">$800</text>
+    </g>
+    <!-- râtelier à fusils -->
+    <g transform="translate(580,326)">
+      <rect x="0" y="0" width="96" height="68" rx="5" fill="#7C4A24" stroke="#5A3418" stroke-width="2.2"/>
+      <g transform="rotate(13 48 27)">
+        <rect x="10" y="24" width="76" height="4.4" rx="2" fill="#5A3418"/>
+        <rect x="62" y="20.5" width="22" height="8" rx="3" fill="#8A5A3C"/>
+      </g>
+      <g transform="rotate(13 48 47)">
+        <rect x="10" y="44" width="76" height="4.4" rx="2" fill="#5A3418"/>
+        <rect x="62" y="40.5" width="22" height="8" rx="3" fill="#8A5A3C"/>
+      </g>
+    </g>
+    <!-- trousseau de clés -->
+    <g transform="translate(798,368)">
+      <circle cx="0" cy="0" r="2.6" fill="#5A3418"/>
+      <circle cx="0" cy="11" r="6.5" fill="none" stroke="#C9B27E" stroke-width="2.2"/>
+      <path d="M 4 16 l 7 9 l 2.5 -2.5 M 8 21 l 2.5 -2.5" stroke="#C9B27E" stroke-width="2.2" fill="none"/>
+      <path d="M -4 16 l -7 9 l -2.5 -2.5" stroke="#C9B27E" stroke-width="2.2" fill="none"/>
+    </g>
+    <!-- poêle + cafetière (à hauteur d'homme) -->
+    <g>
+      <ellipse cx="246" cy="494" rx="32" ry="6" fill="#3B2417" opacity=".2"/>
+      <rect x="226" y="424" width="40" height="66" rx="6" fill="#3B3B3B" stroke="#1E1A18" stroke-width="2.2"/>
+      <rect x="240" y="256" width="11" height="170" fill="#3B3B3B"/>
+      <rect x="233" y="446" width="26" height="18" rx="4" fill="#5A3418"/>
+      <circle cx="246" cy="455" r="5" fill="#E8A93F" opacity=".8"/>
+      <path d="M 235 420 h 22 l -3 -13 q -8.6 -4.4 -16.8 0 Z" fill="#8AB6C8" stroke="#33566B" stroke-width="1.4"/>
+      <path d="M 256 412 q 6 2 6 8" fill="none" stroke="#33566B" stroke-width="2.2"/>
+      <circle class="smoke" cx="246" cy="248" r="7" fill="#FFF4DA"/>
+      <circle class="smoke s2" cx="246" cy="248" r="5.5" fill="#FFF4DA"/>
+    </g>
+    <!-- bureau du shérif (à hauteur de taille) -->
+    <g>
+      <ellipse cx="528" cy="530" rx="88" ry="8" fill="#3B2417" opacity=".2"/>
+      <rect x="430" y="470" width="190" height="12" rx="3" fill="#8A5A3C" stroke="#5A3418" stroke-width="2.2"/>
+      <rect x="440" y="482" width="52" height="42" fill="#7C4A24" stroke="#5A3418" stroke-width="1.8"/>
+      <rect x="556" y="482" width="52" height="42" fill="#7C4A24" stroke="#5A3418" stroke-width="1.8"/>
+      <g stroke="#5A3418" stroke-width="1"><line x1="440" y1="497" x2="492" y2="497"/><line x1="440" y1="511" x2="492" y2="511"/>
+        <line x1="556" y1="497" x2="608" y2="497"/><line x1="556" y1="511" x2="608" y2="511"/></g>
+      <circle cx="466" cy="490" r="2" fill="#E8A93F"/><circle cx="582" cy="490" r="2" fill="#E8A93F"/>
+      <g fill="#FBF0D8" stroke="#C9B27E" stroke-width="1">
+        <rect x="448" y="458" width="30" height="12" rx="1" transform="rotate(-4 463 464)"/>
+        <rect x="482" y="459" width="26" height="11" rx="1" transform="rotate(3 495 464)"/>
+      </g>
+      <path d="M 534 457 l 3 6 6.6 1 -4.8 4.6 1.1 6.6 -5.9 -3.1 -5.9 3.1 1.1 -6.6 -4.8 -4.6 6.6 -1 Z" fill="#E8A93F" stroke="#B87F2A" stroke-width="1"/>
+      <g>
+        <circle cx="586" cy="454" r="8" fill="#FFDD66" opacity=".4"/>
+        <rect x="581" y="447" width="10" height="14" rx="3" fill="#FFDF9E" stroke="#5A3418" stroke-width="1.4"/>
+        <path d="M 578 447 L 594 447 L 586 440 Z" fill="#5A3418"/>
+      </g>
+      <!-- chaise -->
+      <rect x="636" y="490" width="11" height="38" fill="#7C4A24"/>
+      <rect x="622" y="483" width="38" height="9" rx="3" fill="#8A5A3C"/>
+      <rect x="626" y="452" width="30" height="30" rx="4" fill="none" stroke="#8A5A3C" stroke-width="4"/>
+    </g>
+    <!-- cellule de prison -->
+    <g>
+      <rect x="850" y="256" width="310" height="250" fill="#8A5A3C" opacity=".35"/>
+      <rect x="884" y="306" width="72" height="56" fill="#FFD98E" stroke="#5A3418" stroke-width="2.2"/>
+      <g stroke="#5A3418" stroke-width="2.2"><line x1="902" y1="306" x2="902" y2="362"/><line x1="920" y1="306" x2="920" y2="362"/><line x1="938" y1="306" x2="938" y2="362"/></g>
+      <rect x="945" y="470" width="170" height="12" fill="#8A5A3C" stroke="#5A3418" stroke-width="1.8"/>
+      <g stroke="#5A3418" stroke-width="4"><line x1="955" y1="482" x2="955" y2="516"/><line x1="1105" y1="482" x2="1105" y2="516"/></g>
+      <g stroke="#4E4A46" stroke-width="6">
+        <line x1="850" y1="256" x2="850" y2="505"/><line x1="888" y1="256" x2="888" y2="505"/>
+        <line x1="926" y1="256" x2="926" y2="505"/><line x1="1002" y1="256" x2="1002" y2="505"/>
+        <line x1="1040" y1="256" x2="1040" y2="505"/><line x1="1078" y1="256" x2="1078" y2="505"/>
+        <line x1="1116" y1="256" x2="1116" y2="505"/><line x1="1154" y1="256" x2="1154" y2="505"/>
+      </g>
+      <rect x="842" y="248" width="322" height="12" fill="#3B3B3B"/>
+      <rect x="842" y="503" width="322" height="8" fill="#3B3B3B"/>
+      <rect x="932" y="256" width="10" height="249" fill="#3B3B3B"/>
+      <rect x="994" y="256" width="10" height="249" fill="#3B3B3B"/>
+      <rect x="958" y="366" width="24" height="32" rx="4" fill="#4E4A46" stroke="#3B3B3B" stroke-width="2"/>
+      <circle cx="970" cy="383" r="3.6" fill="none" stroke="#C9B27E" stroke-width="2"/>
+      <text x="1002" y="536" text-anchor="middle" class="small-sign" font-size="13" fill="#5A3418" opacity=".8">R&Eacute;SERV&Eacute;E &Agrave; MAC BLAIN</text>
+      <text x="1002" y="258" text-anchor="middle" class="small-sign" font-size="11" fill="#E9D6A6">JAIL</text>
+      <!-- couchette garnie + boulet -->
+      <rect x="1010" y="462" width="60" height="9" rx="3" fill="#E0C68C"/>
+      <rect x="1095" y="460" width="22" height="11" rx="4" fill="#A63A2E" opacity=".8"/>
+      <circle cx="1136" cy="496" r="9" fill="#3B3B3B"/>
+      <path d="M 1127 494 q -8 -2 -12 3 q 6 4 12 1" fill="none" stroke="#4E4A46" stroke-width="2.6"/>
+    </g>
+    <!-- détails : tapis, carte, menottes, crachoir, cactus, souris -->
+    <rect x="404" y="516" width="250" height="26" rx="12" fill="#A63A2E" opacity=".55"/>
+    <rect x="418" y="522" width="222" height="14" rx="7" fill="#E8A93F" opacity=".45"/>
+    <g transform="translate(690,320)">
+      <rect x="0" y="0" width="96" height="72" fill="#E9D6A6" stroke="#7C4A24" stroke-width="2.6"/>
+      <text x="48" y="14" text-anchor="middle" class="small-sign" font-size="8" fill="#7C4A24">TERRITOIRE</text>
+      <path d="M 10 30 Q 30 22 48 32 Q 68 42 86 30 M 14 52 Q 40 44 62 54" fill="none" stroke="#C9A868" stroke-width="1.8"/>
+      <path d="M 66 22 l 6 6 M 72 22 l -6 6" stroke="#A63A2E" stroke-width="1.8"/>
+      <circle cx="24" cy="40" r="2.4" fill="#5E8C4F"/><circle cx="52" cy="48" r="2.4" fill="#5E8C4F"/>
+    </g>
+    <g transform="translate(806,414)">
+      <circle cx="-5" cy="0" r="5.5" fill="none" stroke="#8C8C8C" stroke-width="2.4"/>
+      <circle cx="5" cy="4" r="5.5" fill="none" stroke="#8C8C8C" stroke-width="2.4"/>
+      <path d="M -1 1 l 2 2" stroke="#8C8C8C" stroke-width="2"/>
+    </g>
+    <g transform="translate(706,486)">
+      <path d="M -9 0 q 0 -11 9 -11 q 9 0 9 11 l -2.6 7 l -12.8 0 Z" fill="#E8A93F" stroke="#B87F2A" stroke-width="1.4"/>
+      <ellipse cx="0" cy="-11" rx="6.4" ry="2.4" fill="#B87F2A"/>
+    </g>
+    <g transform="translate(340,470)">
+      <path d="M -8 22 l 2.6 -17 q 5.4 -3 10.8 0 l 2.6 17 Z" fill="#C9713F" stroke="#7C4A24" stroke-width="1.4"/>
+      <path d="M 0 6 L 0 -18 M 0 -6 q -9 -1.4 -10.4 -12 M 0 -10 q 9 -1.4 10.4 -14" fill="none" stroke="#5E8C4F" stroke-width="5.5" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(820,498)">
+      <path d="M 815 -36 l 0 0" fill="none"/>
+      <path d="M -6 -28 a 7 7 0 0 1 12 0 Z" transform="translate(0,0)" fill="#4E3A28"/>
+      <ellipse cx="0" cy="0" rx="6" ry="3.6" fill="#8C8C8C"/>
+      <circle cx="-5.5" cy="-1.4" r="2.6" fill="#8C8C8C"/>
+      <path d="M -7 -3.4 l -1.4 2 2.2 .6 Z" fill="#6E6E6E"/>
+      <path d="M 6 0 q 6 1.4 8 -2" fill="none" stroke="#8C8C8C" stroke-width="1.2"/>
+      <circle cx="-6.8" cy="-1.4" r=".7" fill="#3B2417"/>
+    </g>
+  </g>
+
+  <!-- ======== INTÉRIEUR DU GENERAL STORE (x 6200-7400) ======== -->
+  <g transform="translate(6200,0)">
+    <rect x="0" y="0" width="1200" height="640" fill="#6E5138"/>
+    <rect x="0" y="0" width="1200" height="470" fill="#A87F52"/>
+    <g stroke="#98713F" stroke-width="2">
+      <line x1="0" y1="90" x2="1200" y2="90"/><line x1="0" y1="180" x2="1200" y2="180"/>
+      <line x1="0" y1="270" x2="1200" y2="270"/><line x1="0" y1="360" x2="1200" y2="360"/>
+    </g>
+    <rect x="0" y="470" width="1200" height="170" fill="#B5773F"/>
+    <g stroke="#9A6232" stroke-width="2">
+      <line x1="0" y1="505" x2="1200" y2="505"/><line x1="0" y1="550" x2="1200" y2="550"/><line x1="0" y1="600" x2="1200" y2="600"/>
+    </g>
+    <rect x="0" y="460" width="1200" height="12" fill="#7C4A24"/>
+    <!-- porte de sortie -->
+    <g>
+      <rect x="70" y="330" width="100" height="150" fill="#FFDF9E" stroke="#5A3418" stroke-width="2.2"/>
+      <path d="M 88 480 L 116 330 M 150 480 L 128 330" stroke="#F8A55B" stroke-width="9" opacity=".5"/>
+      <rect x="78" y="294" width="86" height="26" rx="4" fill="#E9D6A6" stroke="#7C4A24" stroke-width="1.8"/>
+      <text x="121" y="313" text-anchor="middle" class="sign" font-size="14" fill="#A63A2E">SORTIE</text>
+    </g>
+    <!-- guirlande d'oignons et jambon suspendus -->
+    <g>
+      <line x1="240" y1="44" x2="240" y2="86" stroke="#5A3418" stroke-width="2"/>
+      <g fill="#C9955C" stroke="#9A6232" stroke-width="1">
+        <ellipse cx="240" cy="96" rx="8" ry="10"/><ellipse cx="236" cy="114" rx="8" ry="10"/><ellipse cx="245" cy="130" rx="8" ry="10"/>
+      </g>
+      <line x1="320" y1="44" x2="320" y2="80" stroke="#5A3418" stroke-width="2"/>
+      <path d="M 320 80 q -14 6 -12 30 q 2 22 12 26 q 10 -4 12 -26 q 2 -24 -12 -30 Z" fill="#A65A3A" stroke="#7C3A22" stroke-width="1.4"/>
+      <path d="M 314 96 q 6 4 12 0" stroke="#7C3A22" stroke-width="1.2" fill="none"/>
+    </g>
+    <!-- pancarte -->
+    <g transform="translate(560,330) rotate(-2)">
+      <rect x="-70" y="-26" width="140" height="52" fill="#E9D6A6" stroke="#7C4A24" stroke-width="1.8"/>
+      <text x="0" y="-4" text-anchor="middle" class="sign" font-size="15" fill="#A63A2E">PRIX DOUX</text>
+      <text x="0" y="16" text-anchor="middle" class="small-sign" font-size="9" fill="#5A3418">cr&eacute;dit refus&eacute; m&ecirc;me au sh&eacute;rif</text>
+    </g>
+    <!-- étagères garnies (à hauteur d'yeux) -->
+    <g>
+      <rect x="760" y="300" width="400" height="10" fill="#7C4A24"/>
+      <rect x="760" y="362" width="400" height="10" fill="#7C4A24"/>
+      <rect x="760" y="424" width="400" height="10" fill="#7C4A24"/>
+      <g stroke="#5A3418" stroke-width="4"><line x1="768" y1="300" x2="768" y2="470"/><line x1="1152" y1="300" x2="1152" y2="470"/></g>
+      <!-- rangée 1 : conserves -->
+      <g stroke="#7C4A24" stroke-width="1">
+        <rect x="790" y="272" width="18" height="28" rx="2" fill="#A63A2E"/>
+        <rect x="812" y="272" width="18" height="28" rx="2" fill="#5E8C4F"/>
+        <rect x="834" y="272" width="18" height="28" rx="2" fill="#E8A93F"/>
+        <rect x="880" y="276" width="24" height="24" rx="3" fill="#8AB6C8"/>
+        <rect x="940" y="268" width="16" height="32" rx="8" fill="#5E8C4F"/>
+        <rect x="962" y="268" width="16" height="32" rx="8" fill="#A63A2E"/>
+        <rect x="1020" y="274" width="30" height="26" rx="2" fill="#C9955C"/>
+        <rect x="1076" y="272" width="18" height="28" rx="2" fill="#4A7A8C"/>
+        <rect x="1098" y="272" width="18" height="28" rx="2" fill="#A63A2E"/>
+      </g>
+      <!-- rangée 2 : bocaux -->
+      <g stroke="#33566B" stroke-width="1">
+        <rect x="800" y="330" width="22" height="32" rx="4" fill="#8AB6C8" opacity=".85"/>
+        <rect x="830" y="330" width="22" height="32" rx="4" fill="#B8D89A" opacity=".85"/>
+        <rect x="900" y="336" width="26" height="26" rx="4" fill="#E8C56A" opacity=".9"/>
+        <rect x="980" y="330" width="22" height="32" rx="4" fill="#D89AB8" opacity=".85"/>
+        <rect x="1040" y="334" width="36" height="28" rx="3" fill="#C9713F"/>
+        <rect x="1100" y="330" width="22" height="32" rx="4" fill="#8AB6C8" opacity=".85"/>
+      </g>
+      <g fill="#5A3418"><rect x="803" y="326" width="16" height="5" rx="1"/><rect x="833" y="326" width="16" height="5" rx="1"/>
+        <rect x="983" y="326" width="16" height="5" rx="1"/><rect x="1103" y="326" width="16" height="5" rx="1"/></g>
+      <!-- étiquettes sur les pots -->
+      <g>
+        <rect x="802" y="342" width="18" height="9" rx="1" fill="#FBF0D8" stroke="#C9B27E" stroke-width=".6"/>
+        <text x="811" y="349" text-anchor="middle" class="small-sign" font-size="5.5" fill="#5A3418">SEL</text>
+        <rect x="832" y="342" width="18" height="9" rx="1" fill="#FBF0D8" stroke="#C9B27E" stroke-width=".6"/>
+        <text x="841" y="349" text-anchor="middle" class="small-sign" font-size="5.5" fill="#5A3418">RIZ</text>
+        <rect x="902" y="346" width="22" height="9" rx="1" fill="#FBF0D8" stroke="#C9B27E" stroke-width=".6"/>
+        <text x="913" y="353" text-anchor="middle" class="small-sign" font-size="5.5" fill="#5A3418">MIEL</text>
+        <rect x="981" y="342" width="20" height="9" rx="1" fill="#FBF0D8" stroke="#C9B27E" stroke-width=".6"/>
+        <text x="991" y="349" text-anchor="middle" class="small-sign" font-size="5.5" fill="#5A3418">TH&Eacute;</text>
+        <rect x="1044" y="344" width="28" height="10" rx="1" fill="#FBF0D8" stroke="#C9B27E" stroke-width=".6"/>
+        <text x="1058" y="352" text-anchor="middle" class="small-sign" font-size="6" fill="#5A3418">CAF&Eacute;</text>
+        <rect x="1101" y="342" width="20" height="9" rx="1" fill="#FBF0D8" stroke="#C9B27E" stroke-width=".6"/>
+        <text x="1111" y="349" text-anchor="middle" class="small-sign" font-size="5.2" fill="#5A3418">SUCRE</text>
+      </g>
+      <!-- rangée 3 : tissus + boîtes -->
+      <g stroke="#7C4A24" stroke-width="1">
+        <rect x="790" y="392" width="44" height="32" fill="#C94F7C"/>
+        <rect x="838" y="398" width="44" height="26" fill="#4A7A8C"/>
+        <rect x="920" y="392" width="50" height="32" fill="#E0C68C"/>
+        <rect x="1000" y="398" width="34" height="26" fill="#5E8C4F"/>
+        <rect x="1060" y="392" width="60" height="32" fill="#B39A6B"/>
+      </g>
+      <path d="M 1066 400 h 48 M 1066 408 h 48 M 1066 416 h 48" stroke="#8A7048" stroke-width="1.4"/>
+    </g>
+    <!-- comptoir + balance + caisse + bonbonnière -->
+    <g>
+      <ellipse cx="560" cy="546" rx="120" ry="9" fill="#3B2417" opacity=".2"/>
+      <rect x="420" y="466" width="290" height="13" rx="3" fill="#8A5A3C" stroke="#5A3418" stroke-width="2.2"/>
+      <rect x="430" y="479" width="270" height="52" fill="#7C4A24" stroke="#5A3418" stroke-width="1.8"/>
+      <g stroke="#5A3418" stroke-width="1.4"><line x1="520" y1="479" x2="520" y2="531"/><line x1="610" y1="479" x2="610" y2="531"/></g>
+      <!-- balance à deux plateaux -->
+      <g transform="translate(478,446)">
+        <line x1="0" y1="20" x2="0" y2="-8" stroke="#B87F2A" stroke-width="2.6"/>
+        <line x1="-20" y1="-8" x2="20" y2="-8" stroke="#B87F2A" stroke-width="2.2"/>
+        <path d="M -20 -8 l -5 12 h 10 Z M 20 -8 l -5 12 h 10 Z" fill="#E8A93F" stroke="#B87F2A" stroke-width="1"/>
+        <rect x="-7" y="16" width="14" height="5" rx="2" fill="#B87F2A"/>
+      </g>
+      <!-- caisse enregistreuse -->
+      <g transform="translate(575,438)">
+        <rect x="-18" y="0" width="36" height="28" rx="3" fill="#5A3418" stroke="#3B2417" stroke-width="1.4"/>
+        <rect x="-14" y="-8" width="28" height="10" rx="2" fill="#E8A93F" stroke="#B87F2A" stroke-width="1"/>
+        <g fill="#C9B27E"><circle cx="-8" cy="10" r="2"/><circle cx="0" cy="10" r="2"/><circle cx="8" cy="10" r="2"/>
+          <circle cx="-8" cy="18" r="2"/><circle cx="0" cy="18" r="2"/><circle cx="8" cy="18" r="2"/></g>
+      </g>
+      <!-- bonbonnière -->
+      <g transform="translate(660,450)">
+        <path d="M -11 16 q -4 -14 4 -22 q -6 -4 0 -8 l 14 0 q 6 4 0 8 q 8 8 4 22 Z" fill="#C8E0EA" opacity=".9" stroke="#33566B" stroke-width="1"/>
+        <g fill="#C94F7C"><circle cx="-2" cy="8" r="2.4"/><circle cx="4" cy="10" r="2.4"/><circle cx="1" cy="3" r="2.4"/></g>
+      </g>
+    </g>
+    <!-- l'épicier derrière le comptoir -->
+    <g transform="translate(600,428)">
+      <circle cx="0" cy="0" r="9.5" fill="#F2C094"/>
+      <path d="M -9.5 -2 q 1 -8 9.5 -8 q 8.5 0 9.5 8 q -5 -4 -9.5 -4 q -4.5 0 -9.5 4" fill="#D8D0C0"/>
+      <circle cx="0" cy="-9" r="2" fill="#F2C094"/>
+      <ellipse cx="-3.4" cy="0" rx="1.7" ry="2.1" fill="#FFFFFF"/><ellipse cx="3.4" cy="0" rx="1.7" ry="2.1" fill="#FFFFFF"/>
+      <circle cx="-3.1" cy=".4" r="1" fill="#3B2417"/><circle cx="3.7" cy=".4" r="1" fill="#3B2417"/>
+      <path d="M -6 -3.4 q 2.4 -1.4 4.6 -.6 M 1.4 -4 q 2.4 -.8 4.6 .6" stroke="#8A7A5E" stroke-width="1" fill="none" stroke-linecap="round"/>
+      <path d="M -4.6 6.2 q 4.6 -2.6 9.2 0 q -4.6 3.8 -9.2 0 Z" fill="#B8B0A0"/>
+      <path d="M 0 1 q 1.4 2.2 0 3.6" fill="none" stroke="#D8A070" stroke-width="1"/>
+      <circle cx="-8" cy="2" r="1.4" fill="#EFA9A0" opacity=".6"/><circle cx="8" cy="2" r="1.4" fill="#EFA9A0" opacity=".6"/>
+      <path d="M -12 40 L -10 14 Q 0 10 10 14 L 12 40 Z" fill="#8AB6C8"/>
+      <path d="M -9 16 L -7 40 L 7 40 L 9 16 Q 0 20 -9 16 Z" fill="#FBF0D8" stroke="#D8D0C0" stroke-width="1"/>
+      <path d="M -10 16 Q -18 20 -20 30" fill="none" stroke="#8AB6C8" stroke-width="4.4" stroke-linecap="round"/>
+      <circle cx="-21" cy="33" r="2.8" fill="#F2C094"/>
+      <path d="M 10 16 Q 18 14 22 8" fill="none" stroke="#8AB6C8" stroke-width="4.4" stroke-linecap="round"/>
+      <circle cx="23" cy="6" r="2.8" fill="#F2C094"/>
+      <path d="M 20 2 l 8 -1 l 0 4 l -8 1 Z" fill="#C9955C"/>
+    </g>
+    <!-- tonneaux, caisses, sacs de farine -->
+    <g>
+      <ellipse cx="286" cy="512" rx="100" ry="9" fill="#3B2417" opacity=".2"/>
+      <rect x="220" y="416" width="46" height="60" rx="7" fill="#C9713F" stroke="#7C4A24" stroke-width="1.8"/>
+      <line x1="220" y1="434" x2="266" y2="434" stroke="#7C4A24" stroke-width="1.4"/>
+      <line x1="220" y1="458" x2="266" y2="458" stroke="#7C4A24" stroke-width="1.4"/>
+      <rect x="276" y="428" width="44" height="44" fill="#E0C68C" stroke="#7C4A24" stroke-width="1.8"/>
+      <line x1="276" y1="428" x2="320" y2="472" stroke="#7C4A24" stroke-width="1.4"/>
+      <path d="M 336 476 q -5 -38 14 -40 q 19 2 14 40 Z" fill="#E9D6A6" stroke="#C9B27E" stroke-width="1.8"/>
+      <text x="350" y="462" text-anchor="middle" class="small-sign" font-size="7.5" fill="#9A6232">FARINE</text>
+      <path d="M 342 440 q 8 -6 16 0" stroke="#C9B27E" stroke-width="1.4" fill="none"/>
+      <rect x="228" y="392" width="30" height="24" rx="3" fill="#B39A6B" stroke="#8A7048" stroke-width="1.4"/>
+      <!-- cagette de pommes -->
+      <rect x="330" y="404" width="34" height="18" fill="#C9955C" stroke="#9A6232" stroke-width="1.4"/>
+      <g fill="#C0392B" stroke="#8A2A20" stroke-width=".8">
+        <circle cx="338" cy="405" r="4.4"/><circle cx="347" cy="403.6" r="4.4"/><circle cx="356" cy="405" r="4.4"/>
+      </g>
+    </g>
+    <!-- balai + pot de pickles -->
+    <g transform="translate(392,452)">
+      <line x1="0" y1="0" x2="11" y2="56" stroke="#C9955C" stroke-width="3"/>
+      <path d="M 7 50 L 26 64 L 10 68 Q 2 61 7 50 Z" fill="#E8C56A" stroke="#C9A139" stroke-width="1.2"/>
+    </g>
+    <!-- plante verte en pot -->
+    <g transform="translate(196,466)">
+      <path d="M -9 24 l 3 -18 q 6 -3 12 0 l 3 18 Z" fill="#C9713F" stroke="#7C4A24" stroke-width="1.4"/>
+      <path d="M 0 8 Q -2 -8 -14 -14 M 0 8 Q 0 -12 0 -20 M 0 8 Q 2 -8 14 -14 M 0 8 Q -6 -4 -20 -4 M 0 8 Q 6 -4 20 -4"
+        fill="none" stroke="#5E8C4F" stroke-width="3.4" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(736,478)">
+      <rect x="-13" y="-26" width="26" height="30" rx="5" fill="#B8D89A" opacity=".9" stroke="#5E8C4F" stroke-width="1.4"/>
+      <rect x="-9" y="-31" width="18" height="6" rx="2" fill="#5A3418"/>
+      <g fill="#5E8C4F"><ellipse cx="-4" cy="-12" rx="3" ry="6"/><ellipse cx="4" cy="-14" rx="3" ry="6"/></g>
+    </g>
+    <!-- chat du magasin sur une caisse -->
+    <g transform="translate(298,420)">
+      <ellipse cx="0" cy="0" rx="10" ry="6" fill="#C9713F" stroke="#9A5228" stroke-width="1"/>
+      <circle cx="-8" cy="-4" r="4.4" fill="#C9713F" stroke="#9A5228" stroke-width="1"/>
+      <path d="M -11.5 -7 l -1.5 -4.5 4 2 Z M -4.5 -7.4 l 1 -4.6 -3.8 1.8 Z" fill="#9A5228"/>
+      <path d="M 8 2 q 7 -2 6 -8" fill="none" stroke="#9A5228" stroke-width="2.4" stroke-linecap="round"/>
+      <circle cx="-9.4" cy="-4.6" r=".8" fill="#3B2417"/><circle cx="-6" cy="-4.6" r=".8" fill="#3B2417"/>
+    </g>
+  </g>
+  <!-- ======== ZONE EST : la grange ======== -->
+  <g>
+    <path d="M 1720 468 L 1694 482 L 2028 482 L 2056 468 Z" fill="#7C4A24" opacity=".12"/>
+    <path d="M 1732 300 L 1722 292 L 1722 452 L 1732 460 Z" fill="#7E2B22" stroke="#5E1E16" stroke-width="1"/>
+    <rect x="1732" y="300" width="300" height="160" fill="#9E4230" stroke="#5E1E16" stroke-width="2.2"/>
+    <rect x="2024" y="302" width="8" height="156" fill="#B85643" opacity=".8"/>
+    <g stroke="#8A3728" stroke-width="1">
+      <line x1="1732" y1="330" x2="2032" y2="330"/><line x1="1732" y1="365" x2="2032" y2="365"/>
+      <line x1="1732" y1="430" x2="2032" y2="430"/>
+    </g>
+    <!-- toit en mansarde -->
+    <path d="M 1716 300 L 1758 246 L 2006 246 L 2048 300 Z" fill="#7C4A24" stroke="#5A3418" stroke-width="2.2"/>
+    <path d="M 1758 246 L 1794 218 L 1970 218 L 2006 246 Z" fill="#8A5A3C" stroke="#5A3418" stroke-width="2.2"/>
+    <path d="M 1722 302 L 1764 248" stroke="#F6ECC9" stroke-width="2.2" stroke-linecap="round"/>
+    <!-- lucarne à foin + poulie -->
+    <rect x="1852" y="252" width="60" height="42" fill="#5E1E16" stroke="#3d150f" stroke-width="1.4"/>
+    <path d="M 1852 255 h 60 M 1855 252 v 42" stroke="#3B2417" opacity=".4" stroke-width="2.2" fill="none"/>
+    <path d="M 1878 218 l 4 -14 l 4 14" fill="none" stroke="#5A3418" stroke-width="2.2"/>
+    <circle cx="1882" cy="207" r="3.5" fill="none" stroke="#5A3418" stroke-width="1.8"/>
+    <line x1="1882" y1="210" x2="1882" y2="248" stroke="#5A3418" stroke-width="1.4"/>
+    <!-- girouette coq, fixée au bout du faîtage -->
+    <g class="girouette">
+      <g transform="translate(1806,219)">
+        <rect x="-4" y="-4" width="8" height="6" fill="#5A3418"/>
+        <line x1="0" y1="0" x2="0" y2="-22" stroke="#5A3418" stroke-width="2.2"/>
+        <path d="M -2 -22 q -6 -8 0 -14 q 2 6 6 7 q 4 -1 5 -5 q 4 6 -1 11 q -4 3 -8 1 Z" fill="#3B2417"/>
+        <line x1="-9" y1="-22" x2="9" y2="-22" stroke="#5A3418" stroke-width="1.8"/>
+      </g>
+    </g>
+    <!-- grande porte à croisillons -->
+    <rect x="1806" y="330" width="110" height="130" fill="#7C4A24" stroke="#5A3418" stroke-width="1.8"/>
+    <line x1="1861" y1="330" x2="1861" y2="460" stroke="#5A3418" stroke-width="2.2"/>
+    <g stroke="#E9D6A6" stroke-width="4" opacity=".9">
+      <line x1="1810" y1="336" x2="1857" y2="454"/><line x1="1857" y1="336" x2="1810" y2="454"/>
+      <line x1="1865" y1="336" x2="1912" y2="454"/><line x1="1912" y1="336" x2="1865" y2="454"/>
+    </g>
+    <path d="M 1806 333 h 110 M 1809 330 v 130" stroke="#3B2417" opacity=".35" stroke-width="2.2" fill="none"/>
+    <text x="1872" y="322" text-anchor="middle" class="sign" font-size="16" fill="#E9D6A6">GRANGE</text>
+    <!-- fenêtre -->
+    <rect x="1952" y="345" width="44" height="40" fill="#8AB6C8" stroke="#5A3418" stroke-width="1.4"/>
+    <path d="M 1952 348 h 44 M 1955 345 v 40" stroke="#5A3418" opacity=".4" stroke-width="2.2" fill="none"/>
+    <line x1="1974" y1="345" x2="1974" y2="385" stroke="#5A3418" stroke-width="1"/>
+    <!-- tas de foin (cachette) -->
+    <g>
+      <ellipse cx="2078" cy="522" rx="52" ry="8" fill="#7C4A24" opacity=".15"/>
+      <path d="M 2030 518 Q 2034 470 2078 466 Q 2122 470 2126 518 Z" fill="#E8C56A" stroke="#C9A139" stroke-width="1.8"/>
+      <path d="M 2048 518 Q 2052 488 2078 486 M 2078 466 L 2078 518 M 2098 512 q 4 -18 -2 -30" stroke="#C9A139" stroke-width="1.2" fill="none"/>
+      <path d="M 2044 480 l -10 -8 M 2108 478 l 10 -9 M 2078 462 l 0 -10" stroke="#C9A139" stroke-width="1.8" stroke-linecap="round"/>
+      <!-- fourche plantée -->
+      <line x1="2126" y1="428" x2="2114" y2="512" stroke="#8A5A3C" stroke-width="3.5"/>
+      <path d="M 2120 442 l -8 -18 M 2126 440 l 0 -20 M 2131 441 l 8 -18" stroke="#8C8C8C" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- corral -->
+  <g stroke="#7C4A24" stroke-width="5" stroke-linecap="round" fill="none">
+    <line x1="2170" y1="462" x2="2170" y2="524"/><line x1="2250" y1="462" x2="2250" y2="524"/>
+    <line x1="2330" y1="462" x2="2330" y2="524"/>
+    <line x1="2162" y1="478" x2="2338" y2="478"/><line x1="2162" y1="504" x2="2338" y2="504"/>
+  </g>
+  <path d="M 2196 470 q 10 14 0 30 M 2196 470 q -10 14 0 30" stroke="#5A2018" stroke-width="1.6" fill="none"/>
+
+  <!-- château d'eau (cachette) -->
+  <g>
+    <path d="M 2420 560 L 2380 574 L 2560 574 L 2600 560 Z" fill="#7C4A24" opacity=".12"/>
+    <g stroke="#7C4A24" stroke-width="6" fill="none">
+      <line x1="2432" y1="392" x2="2416" y2="560"/><line x1="2548" y1="392" x2="2564" y2="560"/>
+      <line x1="2470" y1="392" x2="2462" y2="560"/><line x1="2510" y1="392" x2="2518" y2="560"/>
+    </g>
+    <g stroke="#7C4A24" stroke-width="2.2" fill="none">
+      <line x1="2424" y1="470" x2="2556" y2="470"/>
+      <line x1="2424" y1="470" x2="2556" y2="530"/><line x1="2556" y1="470" x2="2424" y2="530"/>
+    </g>
+    <path d="M 2426 320 L 2426 292 L 2554 292 L 2554 320 L 2548 396 L 2432 396 Z" fill="#B5773F" stroke="#7C4A24" stroke-width="2.2"/>
+    <path d="M 2432 300 L 2426 295 L 2426 292 L 2432 288 Z" fill="#8F5A28"/>
+    <g stroke="#8A5A3C" stroke-width="2.6"><line x1="2426" y1="316" x2="2554" y2="316"/><line x1="2430" y1="356" x2="2550" y2="356"/><line x1="2434" y1="384" x2="2546" y2="384"/></g>
+    <g stroke="#9A6232" stroke-width="1">
+      <line x1="2446" y1="292" x2="2444" y2="396"/><line x1="2470" y1="292" x2="2469" y2="396"/>
+      <line x1="2494" y1="292" x2="2494" y2="396"/><line x1="2518" y1="292" x2="2519" y2="396"/><line x1="2540" y1="292" x2="2541" y2="396"/>
+    </g>
+    <path d="M 2414 292 L 2490 258 L 2566 292 Z" fill="#7C4A24" stroke="#5A3418" stroke-width="2.2"/>
+    <text x="2490" y="348" text-anchor="middle" class="sign" font-size="16" fill="#E9D6A6">COWBOY CITY</text>
+    <line x1="2536" y1="396" x2="2544" y2="556" stroke="#5A3418" stroke-width="2.2"/>
+    <g stroke="#5A3418" stroke-width="1.6">
+      <line x1="2533" y1="420" x2="2545" y2="420"/><line x1="2534" y1="450" x2="2546" y2="450"/>
+      <line x1="2536" y1="480" x2="2548" y2="480"/><line x1="2537" y1="510" x2="2549" y2="510"/>
+    </g>
+    <path d="M 2490 396 l 0 20 q 0 6 -6 6" fill="none" stroke="#8AB6C8" stroke-width="3"/>
+  </g>
+
+  <!-- cactus et décor est -->
+  <g>
+    <ellipse cx="2680" cy="592" rx="26" ry="6" fill="#7C4A24" opacity=".15"/>
+    <path d="M 2678 520 L 2678 588 M 2678 552 q -22 -4 -24 -30 M 2678 542 q 22 -4 24 -34" fill="none" stroke="#5E8C4F" stroke-width="13" stroke-linecap="round"/>
+    <path d="M 2654 522 L 2654 512 M 2702 508 L 2702 498" stroke="#5E8C4F" stroke-width="13" stroke-linecap="round"/>
+    <g stroke="#476E3B" stroke-width="1.1">
+      <line x1="2673" y1="530" x2="2683" y2="530"/><line x1="2673" y1="548" x2="2683" y2="548"/>
+      <line x1="2673" y1="566" x2="2683" y2="566"/>
+    </g>
+    <circle cx="2678" cy="516" r="4" fill="#C94F7C"/>
+  </g>
+  <g>
+    <ellipse cx="2870" cy="570" rx="18" ry="4" fill="#7C4A24" opacity=".15"/>
+    <path d="M 2870 516 L 2870 568 M 2870 544 q -14 -3 -16 -22 M 2870 536 q 14 -3 16 -24" fill="none" stroke="#5E8C4F" stroke-width="9" stroke-linecap="round"/>
+  </g>
+
+  <!-- Sam, client du saloon (PNJ qui se promène sur la place) -->
+  <g id="npc-sam" class="walker" transform="translate(960,455)">
+    <g class="npc-flip">
+      <ellipse cx="0" cy="62" rx="16" ry="4.4" fill="#3B2417" opacity=".18"/>
+      <g class="leg-l">
+        <path d="M -5 30 L -7 44 L -6 58 L -1 58 L -2 44 L -1 32 Z" fill="#4A5A6A"/>
+        <path d="M -8 56 L -1 56 L -1 62 L -11 62 Q -13 58 -8 56 Z" fill="#5A3418"/>
+      </g>
+      <g class="leg-r">
+        <path d="M 5 30 L 7 44 L 6 58 L 1 58 L 2 44 L 1 32 Z" fill="#4A5A6A"/>
+        <path d="M 8 56 L 1 56 L 1 62 L 11 62 Q 13 58 8 56 Z" fill="#5A3418"/>
+      </g>
+      <g class="body-rock">
+        <rect x="-8" y="9" width="16" height="24" rx="4" fill="#B39A6B"/>
+        <path d="M -8 10 L -3 12 L -3 32 L -8 32 Z M 8 10 L 3 12 L 3 32 L 8 32 Z" fill="#5A6E5A"/>
+        <path d="M -8 28 h 16 v 4 h -16 Z" fill="#3B2417"/>
+        <rect x="-2" y="28.5" width="4" height="3" rx="1" fill="#E8A93F"/>
+        <path d="M -8 12 Q -13 18 -12 26" fill="none" stroke="#B39A6B" stroke-width="4" stroke-linecap="round"/>
+        <path d="M 8 12 Q 14 16 15 8" fill="none" stroke="#B39A6B" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="-12" cy="28" r="2.4" fill="#F2C094"/><circle cx="16" cy="6" r="2.4" fill="#F2C094"/>
+        <path d="M 14 4 l 4 -10" stroke="#8A5A3C" stroke-width="2.2" stroke-linecap="round"/>
+        <circle class="smoke" cx="18.6" cy="-7.6" r="3" fill="#FFF4DA"/>
+        <circle class="smoke s2" cx="18.6" cy="-7.6" r="2.2" fill="#FFF4DA"/>
+        <path d="M -5 8 L 5 8 L 2 12 Q 0 13 -2 12 Z" fill="#A63A2E"/>
+        <circle cx="0" cy="1" r="6.5" fill="#F2C094"/>
+        <path d="M -4 4 q 4 3 8 0 q -4 5 -8 0 Z" fill="#8A5A3C"/>
+        <circle cx="-2.4" cy="0" r="1" fill="#3B2417"/><circle cx="2.4" cy="0" r="1" fill="#3B2417"/>
+        <path d="M -4.4 -2.4 q 2 -1.2 4 -.4 M .4 -2.8 q 2 -.8 4 .4" stroke="#6B4226" stroke-width="1" fill="none" stroke-linecap="round"/>
+        <ellipse cx="0" cy="-6.5" rx="11" ry="2.6" fill="#4E342E"/>
+        <path d="M -7 -6 L -6 -14 Q 0 -17 6 -14 L 7 -6 Z" fill="#4E342E"/>
+        <rect x="-6.6" y="-10" width="13.2" height="2.4" fill="#7C4A24"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- la dame à l'ombrelle (PNJ qui se promène) -->
+  <g id="npc-rosie" class="walker" transform="translate(1160,448)">
+    <g class="npc-flip">
+      <ellipse cx="0" cy="72" rx="19" ry="5" fill="#7C4A24" opacity=".15"/>
+      <g class="body-rock">
+        <ellipse cx="-5" cy="69" rx="4.5" ry="2.2" fill="#3B2417"/>
+        <ellipse cx="5" cy="69" rx="4.5" ry="2.2" fill="#3B2417"/>
+        <path d="M -8 24 L 8 24 Q 15 44 16 66 Q 17 70 12 70 L -12 70 Q -17 70 -16 66 Q -15 44 -8 24 Z" fill="#4A7A8C" stroke="#33566B" stroke-width="1"/>
+        <path d="M -12 34 Q 0 39 12 34" fill="none" stroke="#33566B" stroke-width="1"/>
+        <path d="M -14 52 Q 0 58 14 52" fill="none" stroke="#33566B" stroke-width="1"/>
+        <path d="M -16 64 Q 0 70 16 64" fill="none" stroke="#6FA3B8" stroke-width="1.4"/>
+        <path d="M -7 26 L -5 8 Q 0 5 5 8 L 7 26 Z" fill="#4A7A8C" stroke="#33566B" stroke-width="1"/>
+        <circle cx="0" cy="13" r="1" fill="#FBF0D8"/><circle cx="0" cy="17" r="1" fill="#FBF0D8"/><circle cx="0" cy="21" r="1" fill="#FBF0D8"/>
+        <path d="M -5 8 Q 0 11 5 8" fill="none" stroke="#FBF0D8" stroke-width="1.4"/>
+        <path d="M -6 11 Q -12 18 -10 27" fill="none" stroke="#4A7A8C" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="-10" cy="29.5" r="2.6" fill="#F6CBA0"/>
+        <path d="M 6 11 Q 12 6 9 -5" fill="none" stroke="#4A7A8C" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="9" cy="-7" r="2.6" fill="#F6CBA0"/>
+        <circle cx="0" cy="-1" r="8" fill="#F6CBA0"/>
+        <circle cx="6" cy="-8" r="4.2" fill="#8A5A3C"/>
+        <path d="M -8 -3 Q -7 -10 0 -10 Q 7 -10 8 -3 Q 4 -7 0 -6.6 Q -4 -7 -8 -3 Z" fill="#8A5A3C"/>
+        <circle cx="7.6" cy="-9.6" r="1.6" fill="#C94F7C"/>
+        <ellipse cx="-3" cy="-2" rx="1.6" ry="2" fill="#FFFFFF"/><ellipse cx="3" cy="-2" rx="1.6" ry="2" fill="#FFFFFF"/>
+        <circle cx="-2.7" cy="-1.6" r="1" fill="#3B2417"/><circle cx="3.3" cy="-1.6" r="1" fill="#3B2417"/>
+        <path d="M -5 -5 q 2 -1.4 4 -.6 M 1 -5.6 q 2 -.8 4 .6" stroke="#6B4226" stroke-width="1" fill="none" stroke-linecap="round"/>
+        <circle cx="-5.4" cy="2" r="1.5" fill="#EFA9A0" opacity=".6"/><circle cx="5.4" cy="2" r="1.5" fill="#EFA9A0" opacity=".6"/>
+        <path d="M -2.4 3.6 q 2.4 2.6 4.8 0" fill="none" stroke="#3B2417" stroke-width="1.1" stroke-linecap="round"/>
+        <circle cx="-8" cy="1" r="1.2" fill="#E8A93F"/><circle cx="8" cy="1" r="1.2" fill="#E8A93F"/>
+        <line x1="9" y1="-30" x2="10" y2="-6" stroke="#5A3418" stroke-width="1.4"/>
+        <path d="M -12 -26 A 21 21 0 0 1 30 -26 Z" fill="#C94F7C" stroke="#96395C" stroke-width="1"/>
+        <path d="M -12 -26 q 5 5 10 0 q 5 5 11 0 q 5 5 10 0 q 5 5 11 0" fill="none" stroke="#96395C" stroke-width="1"/>
+        <path d="M 9 -45 Q 1 -40 -6 -28 M 9 -45 Q 9.5 -37 9 -27 M 9 -45 Q 17 -40 23 -28" fill="none" stroke="#96395C" stroke-width="1" opacity=".65"/>
+        <circle cx="9" cy="-46" r="1.6" fill="#96395C"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- pistes d'empreintes (révélées par les indices) -->
+  <g id="trail-house" fill="#A87A3E" style="display:none">
+    <ellipse cx="700" cy="560" rx="9" ry="5" transform="rotate(16 700 560)"/>
+    <ellipse cx="655" cy="572" rx="9" ry="5" transform="rotate(16 655 572)"/>
+    <ellipse cx="610" cy="560" rx="9" ry="5" transform="rotate(16 610 560)"/>
+    <ellipse cx="565" cy="572" rx="9" ry="5" transform="rotate(16 565 572)"/>
+    <ellipse cx="520" cy="562" rx="9" ry="5" transform="rotate(16 520 562)"/>
+  </g>
+  <g id="trail-rocks" fill="#A87A3E" style="display:none">
+    <ellipse cx="330" cy="560" rx="9" ry="5" transform="rotate(16 330 560)"/>
+    <ellipse cx="292" cy="574" rx="9" ry="5" transform="rotate(16 292 574)"/>
+    <ellipse cx="254" cy="562" rx="9" ry="5" transform="rotate(16 254 562)"/>
+    <ellipse cx="216" cy="576" rx="9" ry="5" transform="rotate(16 216 576)"/>
+    <ellipse cx="180" cy="564" rx="9" ry="5" transform="rotate(16 180 564)"/>
+  </g>
+  <g id="trail-bank" fill="#A87A3E" style="display:none">
+    <ellipse cx="700" cy="586" rx="9" ry="5" transform="rotate(-18 700 586)"/>
+    <ellipse cx="736" cy="570" rx="9" ry="5" transform="rotate(-18 736 570)"/>
+    <ellipse cx="772" cy="554" rx="9" ry="5" transform="rotate(-18 772 554)"/>
+    <ellipse cx="808" cy="536" rx="9" ry="5" transform="rotate(-18 808 536)"/>
+    <ellipse cx="838" cy="516" rx="9" ry="5" transform="rotate(-18 838 516)"/>
+  </g>
+  <g id="trail-barrels" fill="#A87A3E" style="display:none">
+    <ellipse cx="1380" cy="590" rx="9" ry="5" transform="rotate(-16 1380 590)"/>
+    <ellipse cx="1418" cy="574" rx="9" ry="5" transform="rotate(-16 1418 574)"/>
+    <ellipse cx="1456" cy="558" rx="9" ry="5" transform="rotate(-16 1456 558)"/>
+    <ellipse cx="1494" cy="540" rx="9" ry="5" transform="rotate(-16 1494 540)"/>
+    <ellipse cx="1526" cy="520" rx="9" ry="5" transform="rotate(-16 1526 520)"/>
+  </g>
+  <g id="trail-barn" fill="#A87A3E" style="display:none">
+    <ellipse cx="1880" cy="590" rx="9" ry="5" transform="rotate(-14 1880 590)"/>
+    <ellipse cx="1922" cy="574" rx="9" ry="5" transform="rotate(-14 1922 574)"/>
+    <ellipse cx="1964" cy="558" rx="9" ry="5" transform="rotate(-14 1964 558)"/>
+    <ellipse cx="2006" cy="544" rx="9" ry="5" transform="rotate(-14 2006 544)"/>
+    <ellipse cx="2044" cy="530" rx="9" ry="5" transform="rotate(-14 2044 530)"/>
+  </g>
+  <g id="trail-tower" fill="#A87A3E" style="display:none">
+    <ellipse cx="2330" cy="592" rx="9" ry="5" transform="rotate(-12 2330 592)"/>
+    <ellipse cx="2372" cy="580" rx="9" ry="5" transform="rotate(-12 2372 580)"/>
+    <ellipse cx="2414" cy="568" rx="9" ry="5" transform="rotate(-12 2414 568)"/>
+    <ellipse cx="2452" cy="556" rx="9" ry="5" transform="rotate(-12 2452 556)"/>
+    <ellipse cx="2486" cy="546" rx="9" ry="5" transform="rotate(-12 2486 546)"/>
+  </g>
+
+  <!-- marqueurs de fouille -->
+  <g id="markers">
+    <g class="spot-marker" transform="translate(120,488)">
+      <circle r="12" fill="#F4E4BE" stroke="#7C4A24" stroke-width="2"/>
+      <circle cx="-2" cy="-2" r="4.5" fill="none" stroke="#7C4A24" stroke-width="2"/>
+      <line x1="1.5" y1="1.5" x2="6" y2="6" stroke="#7C4A24" stroke-width="2.4" stroke-linecap="round"/>
+    </g>
+    <g class="spot-marker" transform="translate(830,545)">
+      <circle r="12" fill="#F4E4BE" stroke="#7C4A24" stroke-width="2"/>
+      <circle cx="-2" cy="-2" r="4.5" fill="none" stroke="#7C4A24" stroke-width="2"/>
+      <line x1="1.5" y1="1.5" x2="6" y2="6" stroke="#7C4A24" stroke-width="2.4" stroke-linecap="round"/>
+    </g>
+    <g class="spot-marker" transform="translate(1544,486)">
+      <circle r="12" fill="#F4E4BE" stroke="#7C4A24" stroke-width="2"/>
+      <circle cx="-2" cy="-2" r="4.5" fill="none" stroke="#7C4A24" stroke-width="2"/>
+      <line x1="1.5" y1="1.5" x2="6" y2="6" stroke="#7C4A24" stroke-width="2.4" stroke-linecap="round"/>
+    </g>
+    <g class="spot-marker" transform="translate(2078,470)">
+      <circle r="12" fill="#F4E4BE" stroke="#7C4A24" stroke-width="2"/>
+      <circle cx="-2" cy="-2" r="4.5" fill="none" stroke="#7C4A24" stroke-width="2"/>
+      <line x1="1.5" y1="1.5" x2="6" y2="6" stroke="#7C4A24" stroke-width="2.4" stroke-linecap="round"/>
+    </g>
+    <g class="spot-marker" transform="translate(2490,488)">
+      <circle r="12" fill="#F4E4BE" stroke="#7C4A24" stroke-width="2"/>
+      <circle cx="-2" cy="-2" r="4.5" fill="none" stroke="#7C4A24" stroke-width="2"/>
+      <line x1="1.5" y1="1.5" x2="6" y2="6" stroke="#7C4A24" stroke-width="2.4" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- tumbleweed sur tout le monde -->
+  <g class="tumbleweed">
+    <g transform="translate(0,560)">
+      <g class="tumbleweed-inner">
+        <g fill="none" stroke="#A88A4E" stroke-width="1.4" stroke-linecap="round">
+          <circle cx="0" cy="0" r="22"/><circle cx="0" cy="0" r="13"/>
+          <path d="M -20 -8 L 20 8 M -14 14 L 14 -16 M 0 -22 L 0 22 M -22 2 L 22 -4"/>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- ======== MAC BLAIN (fuite) ======== -->
+  <g id="macblain" style="display:none" transform="translate(-200,432)">
+    <g id="macblain-flip">
+      <ellipse cx="0" cy="104" rx="24" ry="6" fill="#3B2417" opacity=".2"/>
+      <g class="leg-l">
+        <path d="M -11 52 L -14 76 L -12 92 L -4 92 L -5 74 L -3 55 Z" fill="#2E2A28"/>
+        <path d="M -12.5 90 L -4 90 L -4 100 L -18 100 Q -20 96 -16 94 L -12.5 94 Z" fill="#1E1A18"/>
+      </g>
+      <g class="leg-r">
+        <path d="M 11 52 L 14 76 L 12 92 L 4 92 L 5 74 L 3 55 Z" fill="#2E2A28"/>
+        <path d="M 12.5 90 L 4 90 L 4 100 L 18 100 Q 20 96 16 94 L 12.5 94 Z" fill="#1E1A18"/>
+      </g>
+      <path d="M -13 15 Q 0 11 13 15 L 14 50 L -14 50 Z" fill="#6E6258"/>
+      <path d="M -13 15 L -5 18 L -5 50 L -14 50 Z M 13 15 L 5 18 L 5 50 L 14 50 Z" fill="#2E2A28"/>
+      <rect x="-15" y="47" width="30" height="7" fill="#1E1A18"/>
+      <rect x="-4" y="47.5" width="8" height="6" rx="1" fill="#8C8C8C"/>
+      <path d="M -12 18 Q -22 26 -19 40" fill="none" stroke="#6E6258" stroke-width="6" stroke-linecap="round"/>
+      <circle cx="-18" cy="44" r="3.2" fill="#D8A070"/>
+      <path d="M 12 18 Q 24 22 28 14" fill="none" stroke="#6E6258" stroke-width="6" stroke-linecap="round"/>
+      <circle cx="29" cy="12" r="3.2" fill="#D8A070"/>
+      <path d="M 27 8 l 12 -2 l 0 4 l -7 2 l 0 4 l -4 0 Z" fill="#3B3B3B"/>
+      <path d="M -7 13 L 7 13 L 1 22 Q 0 23 -1 22 Z" fill="#54647A"/>
+      <circle cx="0" cy="0" r="10.5" fill="#D8A070"/>
+      <path d="M -8 6 Q 0 12 8 6 L 8 9 Q 0 14 -8 9 Z" fill="#4E4A46" opacity=".55"/>
+      <path d="M -3.6 6.8 q 3.6 -2 7.2 .4" fill="none" stroke="#2E2A28" stroke-width="1.4" stroke-linecap="round"/>
+      <ellipse cx="-3.4" cy="-.5" rx="1.8" ry="2" fill="#FFFFFF"/><ellipse cx="3.4" cy="-.5" rx="1.8" ry="2" fill="#FFFFFF"/>
+      <circle cx="-2.8" cy="0" r="1.1" fill="#1E1A18"/><circle cx="4" cy="0" r="1.1" fill="#1E1A18"/>
+      <path d="M -6.5 -4.5 l 5.5 2 M 6.5 -4.5 l -5.5 2" stroke="#1E1A18" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M 5 2 l 3.5 3" stroke="#B0764A" stroke-width="1.2"/>
+      <ellipse cx="0" cy="-8" rx="14" ry="3" fill="#1E1A18"/>
+      <path d="M -8 -9.5 L -7 -22 Q 0 -25 7 -22 L 8 -9.5 Q 0 -13 -8 -9.5 Z" fill="#1E1A18"/>
+      <rect x="-7.4" y="-15" width="14.8" height="2.6" fill="#54647A"/>
+    </g>
+  </g>
+
+  <!-- ======== LE JOUEUR : le shérif ======== -->
+  <g id="player" transform="translate(660,428)">
+    <g id="player-flip">
+      <ellipse cx="0" cy="108" rx="27" ry="6" fill="#7C4A24" opacity=".2"/>
+      <g class="leg-l">
+        <path d="M -12 55 L -14 78 L -13 94 L -4 94 L -4.5 78 L -3 58 Z" fill="#4A5A6A"/>
+        <path d="M -13.4 76 l 9 0" stroke="#3E4C5A" stroke-width="1"/>
+        <path d="M -13.5 92 L -4 92 L -4 102 L -19 102 Q -21 98 -17 96 L -13.5 96 Z" fill="#5A3418"/>
+        <circle cx="-19.5" cy="98" r="2" fill="none" stroke="#C9B27E" stroke-width="1"/>
+        <path d="M -13 91 l 9 0" stroke="#3B2417" stroke-width="1.4"/>
+      </g>
+      <g class="leg-r">
+        <path d="M 12 55 L 14 78 L 13 94 L 4 94 L 4.5 78 L 3 58 Z" fill="#4A5A6A"/>
+        <path d="M 4.4 76 l 9 0" stroke="#3E4C5A" stroke-width="1"/>
+        <path d="M 13.5 92 L 4 92 L 4 102 L 19 102 Q 21 98 17 96 L 13.5 96 Z" fill="#5A3418"/>
+        <circle cx="19.5" cy="98" r="2" fill="none" stroke="#C9B27E" stroke-width="1"/>
+        <path d="M 4 91 l 9 0" stroke="#3B2417" stroke-width="1.4"/>
+      </g>
+      <g class="torso">
+        <path d="M -14 16 Q 0 12 14 16 L 15 52 L -15 52 Z" fill="#D9BC85"/>
+        <path d="M -14 16 L -5 19 L -5 52 L -15 52 Z" fill="#8A5A3C" stroke="#6B4226" stroke-width="1"/>
+        <path d="M 14 16 L 5 19 L 5 52 L 15 52 Z" fill="#8A5A3C" stroke="#6B4226" stroke-width="1"/>
+        <circle cx="0" cy="26" r="1" fill="#7C4A24"/><circle cx="0" cy="33" r="1" fill="#7C4A24"/><circle cx="0" cy="40" r="1" fill="#7C4A24"/>
+        <path d="M -9.5 26 l 1.8 3.6 4 .6 -2.9 2.8 .7 4 -3.6 -1.9 -3.6 1.9 .7 -4 -2.9 -2.8 4 -.6 Z" fill="#E8A93F" stroke="#B87F2A" stroke-width="1"/>
+        <path d="M -8 14 L 8 14 L 1 24 Q 0 25 -1 24 Z" fill="#A63A2E"/>
+        <path d="M -8 14 Q 0 18 8 14" fill="none" stroke="#7C2A20" stroke-width="1"/>
+        <path d="M -13 19 Q -23 27 -20 42" fill="none" stroke="#D9BC85" stroke-width="6" stroke-linecap="round"/>
+        <path d="M 13 19 Q 23 27 20 42" fill="none" stroke="#D9BC85" stroke-width="6" stroke-linecap="round"/>
+        <circle cx="-19" cy="46" r="3.4" fill="#F2C094"/>
+        <circle cx="19" cy="46" r="3.4" fill="#F2C094"/>
+        <rect x="-16" y="50" width="32" height="7" fill="#3B2417"/>
+        <rect x="-4.5" y="50.5" width="9" height="6" rx="1" fill="#E8A93F"/>
+        <g fill="#C9B27E">
+          <rect x="-13" y="51.5" width="2" height="4"/><rect x="-9" y="51.5" width="2" height="4"/>
+          <rect x="7" y="51.5" width="2" height="4"/><rect x="11" y="51.5" width="2" height="4"/>
+        </g>
+        <path d="M -25 56 L -17 56 L -17 70 Q -17 74 -21 74 L -24 70 Z" fill="#7C4A24" stroke="#5A3418" stroke-width="1"/>
+        <path d="M -20 50 q -4 -3 -3 -7 q 4 0 6 4 L -18 54 Z" fill="#5A3418"/>
+        <path d="M 25 56 L 17 56 L 17 70 Q 17 74 21 74 L 24 70 Z" fill="#7C4A24" stroke="#5A3418" stroke-width="1"/>
+        <path d="M 20 50 q 4 -3 3 -7 q -4 0 -6 4 L 18 54 Z" fill="#5A3418"/>
+        <circle cx="-11" cy="2" r="1.8" fill="#F2C094"/><circle cx="11" cy="2" r="1.8" fill="#F2C094"/>
+        <circle cx="0" cy="0" r="11" fill="#F2C094"/>
+        <ellipse cx="-3.4" cy="0" rx="1.9" ry="2.3" fill="#FFFFFF"/><ellipse cx="3.4" cy="0" rx="1.9" ry="2.3" fill="#FFFFFF"/>
+        <circle cx="-3.2" cy=".4" r="1.1" fill="#3B2417"/><circle cx="3.6" cy=".4" r="1.1" fill="#3B2417"/>
+        <path d="M -6 -3.4 q 2.6 -1.6 5 -.6 M 1 -4 q 2.6 -1 5 .6" fill="none" stroke="#6B4226" stroke-width="1.1" stroke-linecap="round"/>
+        <path d="M 0 1 q 1.6 2.6 0 4" fill="none" stroke="#D8A070" stroke-width="1"/>
+        <path d="M 0 7.6 Q -3 5.6 -6 7 Q -9 8.4 -10.5 6.4 Q -9.6 10.4 -5.6 9.8 Q -2 9.2 0 7.6 Z" fill="#8A5A3C"/>
+        <path d="M 0 7.6 Q 3 5.6 6 7 Q 9 8.4 10.5 6.4 Q 9.6 10.4 5.6 9.8 Q 2 9.2 0 7.6 Z" fill="#8A5A3C"/>
+        <path d="M -11 -1 q 0 4 2 6 l -3 .4 Z" fill="#8A5A3C"/>
+        <path d="M 11 -1 q 0 4 -2 6 l 3 .4 Z" fill="#8A5A3C"/>
+        <path d="M -22 -7 Q -24 -3 -18 -4 Q -10 -6 0 -6 Q 10 -6 18 -4 Q 24 -3 22 -7 Q 12 -11 0 -11 Q -12 -11 -22 -7 Z" fill="#C9713F" stroke="#7C4A24" stroke-width="1"/>
+        <path d="M -13 -8.6 L -11 -24 Q 0 -28 11 -24 L 13 -8.6 Q 0 -12 -13 -8.6 Z" fill="#C9713F" stroke="#7C4A24" stroke-width="1"/>
+        <rect x="-11.5" y="-15" width="23" height="3" fill="#7C4A24"/>
+        <path d="M -3 -25.8 q 3 2.6 6 0" fill="none" stroke="#7C4A24" stroke-width="1"/>
+      </g>
+    </g>
+  </g>
+</svg>
+</div>
+
+<!-- ================= HUD ================= -->
+<div id="objective">Interrogez les habitants pour trouver Mac Blain</div>
+<button id="btn-carnet" class="hud-btn">&#128211;<span id="carnet-badge">0</span></button>
+<button id="btn-music" class="hud-btn" aria-label="Musique">&#127925;</button>
+<button id="btn-aide" class="hud-btn" aria-label="Aide">?</button>
+<button id="btn-left" class="hud-btn" aria-label="Aller à gauche">&#9664;</button>
+<button id="btn-right" class="hud-btn" aria-label="Aller à droite">&#9654;</button>
+<button id="btn-action" class="hud-btn">Parler</button>
+<div id="toast"></div>
+<div id="fader"></div>
+<div id="rotate-hint">&#128260; Tournez votre t&eacute;l&eacute;phone pour mieux jouer</div>
+
+<div id="dialog">
+  <div class="who"></div>
+  <div class="txt"></div>
+  <div class="tap">toucher pour continuer &#9654;</div>
+</div>
+
+<div id="aide" class="screen">
+  <div class="poster" style="text-align:left">
+    <h1 style="text-align:center; font-size:1.5rem">&#11088; Aide du Sh&eacute;rif</h1>
+    <p id="aide-now" style="background:#E8A93F; border:2px solid #3B2417; border-radius:8px; padding:8px 12px; font-weight:800"></p>
+    <p><b>&#127919; But :</b> retrouver la cachette du bandit <b>Mac Blain</b> et le capturer en duel sur la place.</p>
+    <p><b>&#127918; Commandes :</b><br>
+      &#9664; &#9654; pour marcher (ou fl&egrave;ches du clavier)<br>
+      Le <b>bouton dor&eacute;</b> agit selon l'endroit : &#128172; Parler, &#128269; Fouiller, &#128682; Entrer, &#128074; Frapper<br>
+      &#128211; le carnet relit vos indices &mdash; &#127925; coupe la musique</p>
+    <p><b>&#129488; Une partie :</b><br>
+      1. Interrogez les habitants (Dolly au saloon, la dame, Silas, l'&eacute;picier&hellip;)<br>
+      2. Deux indices &rarr; des <b>empreintes</b> apparaissent vers la cachette<br>
+      3. <b>Fouillez</b> la bonne cachette : Mac Blain file sur la place !<br>
+      4. Rejoignez-le et <b>tapez vite</b> pour gagner le duel</p>
+    <p style="font-size:13px; opacity:.8"><b>&#128161; Astuces :</b> Silas grogne&hellip; insistez. La maison bleue cache
+      plus d'un secret : frappez, frappez, frappez. Et capturez en moins de 8 minutes !</p>
+    <p style="text-align:center; margin:14px 0 0">
+      <button class="big-btn" id="btn-aide-close" style="font-size:15px; padding:8px 22px">Fermer</button>
+    </p>
+  </div>
+</div>
+
+<div id="carnet">
+  <div class="pad">
+    <h2>&#128211; Carnet d'indices</h2>
+    <ul id="clue-list"></ul>
+    <p style="text-align:center;margin:14px 0 0">
+      <button class="big-btn" id="btn-carnet-close" style="font-size:15px;padding:8px 22px">Fermer</button>
+    </p>
+  </div>
+</div>
+
+<!-- ================= INTRO ================= -->
+<div id="intro" class="screen show">
+  <div class="poster">
+    <div class="wanted">&#9733; WANTED &mdash; $5000 &#9733;</div>
+    <svg viewBox="-40 -46 80 82" width="120" height="123" style="margin:6px auto;display:block;background:#E9D6A6;border:3px solid #7C4A24;border-radius:6px">
+      <circle cx="0" cy="4" r="17" fill="#D8A070"/>
+      <path d="M -13 14 Q 0 23 13 14 L 13 19 Q 0 27 -13 19 Z" fill="#4E4A46" opacity=".6"/>
+      <path d="M -6 15 q 6 -3.4 12 .7" fill="none" stroke="#2E2A28" stroke-width="2.4" stroke-linecap="round"/>
+      <ellipse cx="-5.5" cy="2" rx="3" ry="3.4" fill="#FFFFFF"/><ellipse cx="5.5" cy="2" rx="3" ry="3.4" fill="#FFFFFF"/>
+      <circle cx="-4.6" cy="2.8" r="1.9" fill="#1E1A18"/><circle cx="6.4" cy="2.8" r="1.9" fill="#1E1A18"/>
+      <path d="M -11 -5 l 9 3.4 M 11 -5 l -9 3.4" stroke="#1E1A18" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M 8 6 l 6 5" stroke="#B0764A" stroke-width="2"/>
+      <path d="M 0 6 q 2.6 4 0 6.6" fill="none" stroke="#B0764A" stroke-width="1.6"/>
+      <ellipse cx="0" cy="-9.5" rx="22" ry="4.6" fill="#1E1A18"/>
+      <path d="M -13 -11.5 L -11 -32 Q 0 -37 11 -32 L 13 -11.5 Q 0 -17 -13 -11.5 Z" fill="#1E1A18"/>
+      <rect x="-11.8" y="-21" width="23.6" height="4" fill="#54647A"/>
+    </svg>
+    <h1>La Traque de Mac Blain</h1>
+    <p>Sh&eacute;rif, le bandit <b>Mac Blain</b> se cache quelque part dans la r&eacute;gion de Cowboy City.
+    Parcourez la ville &agrave; pied, <b>interrogez les habitants</b>, suivez les indices&hellip;
+    puis <b>fouillez sa cachette</b> et gagnez le duel !</p>
+    <p style="font-size:13px;opacity:.75">&#9664; &#9654; pour marcher &mdash; le bouton dor&eacute; pour agir<br>(clavier : fl&egrave;ches + Espace)</p>
+    <button class="big-btn" id="btn-play">Jouer &#11088;</button>
+  </div>
+</div>
+
+<!-- ================= DUEL ================= -->
+<div id="duel" class="screen">
+  <div class="poster">
+    <h1>MAC BLAIN !</h1>
+    <svg viewBox="-40 -46 80 82" width="110" height="113" style="margin:2px auto;display:block">
+      <circle cx="0" cy="4" r="17" fill="#D8A070"/>
+      <path d="M -13 14 Q 0 23 13 14 L 13 19 Q 0 27 -13 19 Z" fill="#4E4A46" opacity=".6"/>
+      <path d="M -6 16 q 6 -4 12 0" fill="none" stroke="#2E2A28" stroke-width="2.4" stroke-linecap="round"/>
+      <ellipse cx="-5.5" cy="2" rx="3" ry="3.4" fill="#FFFFFF"/><ellipse cx="5.5" cy="2" rx="3" ry="3.4" fill="#FFFFFF"/>
+      <circle cx="-4.6" cy="2.8" r="1.9" fill="#1E1A18"/><circle cx="6.4" cy="2.8" r="1.9" fill="#1E1A18"/>
+      <path d="M -11 -5 l 9 3.4 M 11 -5 l -9 3.4" stroke="#1E1A18" stroke-width="2.6" stroke-linecap="round"/>
+      <ellipse cx="0" cy="-9.5" rx="22" ry="4.6" fill="#1E1A18"/>
+      <path d="M -13 -11.5 L -11 -32 Q 0 -37 11 -32 L 13 -11.5 Q 0 -17 -13 -11.5 Z" fill="#1E1A18"/>
+      <rect x="-11.8" y="-21" width="23.6" height="4" fill="#54647A"/>
+    </svg>
+    <p id="duel-msg">Il d&eacute;gaine&hellip; <b>Tapez le bouton aussi vite que possible !</b></p>
+    <div id="duel-bar"><div id="duel-fill"></div></div>
+    <button class="big-btn" id="btn-fire">&#128165; D&Eacute;GAINEZ !</button>
+  </div>
+</div>
+
+<!-- ================= VICTOIRE ================= -->
+<div id="victory" class="screen">
+  <div class="poster">
+    <svg viewBox="0 0 200 250" width="min(250px,58vw)" style="margin:2px auto;display:block">
+      <!-- grande affiche WANTED -->
+      <rect x="14" y="8" width="172" height="234" fill="#F4E4BE" stroke="#7C4A24" stroke-width="4"/>
+      <rect x="22" y="16" width="156" height="218" fill="none" stroke="#C9B27E" stroke-width="1.6"/>
+      <circle cx="100" cy="24" r="3" fill="#7C4A24"/>
+      <text x="100" y="52" text-anchor="middle" class="sign" font-size="26" fill="#7C4A24">WANTED</text>
+      <text x="100" y="70" text-anchor="middle" class="small-sign" font-size="9" fill="#9A6232">MORT OU VIF</text>
+      <g transform="translate(100,124) scale(1.7)">
+        <circle cx="0" cy="4" r="17" fill="#D8A070"/>
+        <path d="M -13 14 Q 0 23 13 14 L 13 19 Q 0 27 -13 19 Z" fill="#4E4A46" opacity=".6"/>
+        <path d="M -6 15 q 6 -3.4 12 .7" fill="none" stroke="#2E2A28" stroke-width="2.4" stroke-linecap="round"/>
+        <ellipse cx="-5.5" cy="2" rx="3" ry="3.4" fill="#FFFFFF"/><ellipse cx="5.5" cy="2" rx="3" ry="3.4" fill="#FFFFFF"/>
+        <circle cx="-4.6" cy="2.8" r="1.9" fill="#1E1A18"/><circle cx="6.4" cy="2.8" r="1.9" fill="#1E1A18"/>
+        <path d="M -11 -5 l 9 3.4 M 11 -5 l -9 3.4" stroke="#1E1A18" stroke-width="2.6" stroke-linecap="round"/>
+        <path d="M 8 6 l 6 5" stroke="#B0764A" stroke-width="2"/>
+        <ellipse cx="0" cy="-9.5" rx="22" ry="4.6" fill="#1E1A18"/>
+        <path d="M -13 -11.5 L -11 -32 Q 0 -37 11 -32 L 13 -11.5 Q 0 -17 -13 -11.5 Z" fill="#1E1A18"/>
+        <rect x="-11.8" y="-21" width="23.6" height="4" fill="#54647A"/>
+      </g>
+      <text x="100" y="200" text-anchor="middle" class="sign" font-size="17" fill="#A63A2E">MAC BLAIN</text>
+      <text x="100" y="222" text-anchor="middle" class="small-sign" font-size="13" fill="#7C4A24">R&Eacute;COMPENSE $5000</text>
+      <!-- tampon APPROVED (seulement si capture en moins de 8 min) -->
+      <g class="stamp" id="stamp-g">
+        <g transform="translate(100,128) rotate(-18)">
+          <rect x="-82" y="-26" width="164" height="52" rx="8" fill="none" stroke="#C0392B" stroke-width="5" opacity=".9"/>
+          <rect x="-75" y="-19" width="150" height="38" rx="5" fill="none" stroke="#C0392B" stroke-width="2" opacity=".9"/>
+          <text x="0" y="10" text-anchor="middle" class="small-sign" font-size="27" fill="#C0392B" opacity=".92"
+            style="letter-spacing:3px">APPROVED</text>
+        </g>
+      </g>
+    </svg>
+    <h1>Mac Blain est sous les verrous !</h1>
+    <p id="victory-stats"></p>
+    <p style="display:flex; gap:12px; justify-content:center; margin:.8em 0 .2em">
+      <button class="big-btn" id="btn-replay">Rejouer &#127919;</button>
+      <button class="big-btn" id="btn-quit" style="background:#F4E4BE">S'arr&ecirc;ter &#128721;</button>
+    </p>
+  </div>
+</div>
+
+<!-- ================= FIN ================= -->
+<div id="endgame" class="screen">
+  <div class="poster">
+    <div class="wanted">&#11088; FIN &#11088;</div>
+    <svg viewBox="0 0 120 70" width="200" style="margin:8px auto;display:block">
+      <path d="M -4 62 C 30 54 80 54 124 60" fill="none" stroke="#BC8449" stroke-width="5" stroke-linecap="round"/>
+      <circle cx="96" cy="20" r="13" fill="#FFDD66" stroke="#E8A93F" stroke-width="2"/>
+      <path d="M 18 62 q -1 -20 4 -28 M 22 44 q -8 -1 -9 -12 M 22 40 q 8 -1 9 -14" fill="none" stroke="#5E8C4F" stroke-width="5" stroke-linecap="round"/>
+      <path d="M 48 58 q 6 -10 14 -4 q 6 -8 12 0" fill="none" stroke="#7C4A24" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M 30 16 q 9 -9 18 0 q 9 -9 18 0" fill="none" stroke="#7C4A24" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <h1 style="font-size:1.5rem">Merci d'avoir jou&eacute;, Sh&eacute;rif !</h1>
+    <p>Cowboy City peut dormir tranquille&hellip; jusqu'&agrave; la prochaine fois.</p>
+    <button class="big-btn" id="btn-replay2">Rejouer &#127919;</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var W = 7460, GROUND_Y = 456, SPEED = 185, DUEL_X = 1000, MB_Y = 458;
+  var PS = 'scale(0.72,0.72)', PSL = 'scale(-0.72,0.72)';
+  var TOWN = {cam:[0,3000], bounds:[40,2960]};
+  var ROOM_SALOON = {cam:[3200,4400], bounds:[3290,4330]};
+  var ROOM_SHERIFF = {cam:[4700,5900], bounds:[4790,5830]};
+  var ROOM_STORE = {cam:[6200,7400], bounds:[6290,7330]};
+  var svg = document.getElementById('world');
+  var player = document.getElementById('player');
+  var pflip = document.getElementById('player-flip');
+
+  var SPOTS = [
+    {id:'rocks',   x:120,  label:'les rochers',   landmark:'les gros rochers de l’entrée ouest', zone:'ouest'},
+    {id:'bank',    x:858,  label:'la banque',     landmark:'la banque',                                    zone:'centre'},
+    {id:'barrels', x:1544, label:'les tonneaux',  landmark:'les tonneaux du magasin général',    zone:'centre'},
+    {id:'barn',    x:2078, label:'le tas de foin',landmark:'la grange',                                    zone:'est'},
+    {id:'tower',   x:2490, label:'le château d’eau', landmark:'le château d’eau',      zone:'est'},
+    {id:'house',   x:429,  label:'la maison bleue', landmark:'la maison bleue',        zone:'ouest'}
+  ];
+  var HOUSE_X = 429, NOTE_X = 474;
+  var NPCS = [
+    {id:'dolly', x:3900, name:'Dolly'},
+    {id:'rosie', x:1160, name:'La dame à l’ombrelle'},
+    {id:'sam',   x:960,  name:'Sam'},
+    {id:'silas', x:1462, name:'Le vieux Silas'},
+    {id:'epicier', x:6800, name:'L’épicier'}
+  ];
+  var DOORS = [
+    {x:1070, label:'🚪 Entrer',  to:3340, zone:ROOM_SALOON},
+    {x:3340, label:'🚪 Sortir',  to:1070, zone:TOWN},
+    {x:611,  label:'🚪 Entrer',  to:4830, zone:ROOM_SHERIFF},
+    {x:4820, label:'🚪 Sortir',  to:611,  zone:TOWN},
+    {x:1492, label:'🚪 Entrer',  to:6340, zone:ROOM_STORE},
+    {x:6330, label:'🚪 Sortir',  to:1492, zone:TOWN}
+  ];
+  var MSGS = [
+    {x:869,  label:'👊 Frapper', who:'La banque',
+     lines:['Fermée à double tour. Le banquier ne fait confiance à personne…','Surtout depuis que Mac Blain rôde !']},
+    {x:1861, label:'👊 Frapper', who:'La grange',
+     lines:['La grande porte est bloquée par une poutre de l’intérieur…','Suspect, non ?']},
+    {x:4260, label:'🎵 Écouter', who:'Le pianiste',
+     lines:['Le pianiste joue sans s’arrêter, le chapeau sur les yeux.','« Mac Blain ? Connais pas la chanson, Shérif. »']},
+    {x:5700, label:'👀 Regarder', who:'La cellule',
+     lines:['Propre, solide, barreaux neufs…','Il ne manque plus que son locataire : Mac Blain !']},
+    {x:4980, label:'👀 Regarder', who:'Votre bureau',
+     lines:['Vos affaires sont en ordre, le café du poêle est encore chaud.','Au travail, Shérif !']}
+  ];
+  var WALKERS = [
+    {id:'rosie', min:1100, max:1305, speed:34, dir:1, y:448, wx:1160},
+    {id:'sam',   min:905,  max:1035, speed:44, dir:-1, y:455, wx:960}
+  ];
+  var ZONE_TXT = {ouest:'vers l’OUEST, du côté de l’entrée de la ville',
+                  centre:'au CENTRE de la ville, près de la grande place',
+                  est:'vers l’EST, du côté de la grange'};
+
+  var st = {
+    mode:'intro', px:660, dir:1, moveL:false, moveR:false,
+    spot:null, clueZone:false, clueLand:false, silasTalked:false,
+    clues:[], escapes:0, t0:0, near:null, lastTs:0,
+    cam:TOWN.cam, bounds:TOWN.bounds, showdown:false,
+    knocks:0, noteShown:false
+  };
+
+  /* ---------- audio ---------- */
+  var actx = null;
+  function beep(f, d, type, vol){
+    try{
+      if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)();
+      var o = actx.createOscillator(), g = actx.createGain();
+      o.type = type||'square'; o.frequency.value = f;
+      g.gain.setValueAtTime(vol||.06, actx.currentTime);
+      g.gain.exponentialRampToValueAtTime(.0001, actx.currentTime + (d||.1));
+      o.connect(g); g.connect(actx.destination);
+      o.start(); o.stop(actx.currentTime + (d||.1));
+    }catch(e){}
+  }
+  function sndTap(){ beep(660,.05,'square',.05); }
+  function sndClue(){ beep(523,.09,'triangle',.09); setTimeout(function(){beep(784,.12,'triangle',.09);},90); }
+  function sndBad(){ beep(196,.25,'sawtooth',.08); }
+  function sndWin(){ [523,659,784,1047].forEach(function(f,i){ setTimeout(function(){beep(f,.18,'triangle',.09);}, i*140); }); }
+
+  /* ---------- helpers UI ---------- */
+  function $(id){ return document.getElementById(id); }
+  function toast(msg, ms){
+    var t = $('toast'); t.textContent = msg; t.style.display = 'block';
+    clearTimeout(t._h); t._h = setTimeout(function(){ t.style.display='none'; }, ms||2600);
+  }
+  var dlgQueue = [], dlgCb = null;
+  function say(who, lines, cb){
+    dlgQueue = lines.slice(); dlgCb = cb||null;
+    $('dialog').querySelector('.who').textContent = who;
+    nextLine(true);
+    st.mode = 'dialog';
+  }
+  function nextLine(first){
+    if(!first) sndTap();
+    if(dlgQueue.length===0){
+      $('dialog').classList.remove('show');
+      st.mode = 'play';
+      if(dlgCb){ var cb = dlgCb; dlgCb = null; cb(); }
+      return;
+    }
+    $('dialog').querySelector('.txt').textContent = dlgQueue.shift();
+    $('dialog').classList.add('show');
+  }
+  $('dialog').addEventListener('pointerdown', function(e){ e.stopPropagation(); nextLine(); });
+
+  function addClue(txt){
+    if(st.clues.indexOf(txt)>=0) return;
+    st.clues.push(txt);
+    $('carnet-badge').textContent = st.clues.length;
+    sndClue();
+    toast('✏️ Indice noté dans le carnet !');
+    refreshTrail();
+  }
+  function renderCarnet(){
+    var ul = $('clue-list'); ul.innerHTML = '';
+    if(st.clues.length===0){ ul.innerHTML = '<li class="none">Aucun indice pour l’instant… allez parler aux habitants !</li>'; return; }
+    st.clues.forEach(function(c){ var li = document.createElement('li'); li.textContent = c; ul.appendChild(li); });
+  }
+  function refreshTrail(){
+    SPOTS.forEach(function(s){ var el = $('trail-'+s.id); if(el) el.style.display='none'; });
+    st.noteShown = st.clueZone && st.clueLand;
+    var note = $('bnote'); if(note) note.style.display = st.noteShown ? '' : 'none';
+    if(st.clueZone && st.clueLand){
+      var el = $('trail-'+st.spot.id); if(el) el.style.display='';
+      $('objective').textContent = 'Des empreintes fraîches sont apparues… suivez-les !';
+    }
+  }
+
+  /* ---------- la maison bleue ---------- */
+  function knockHouse(){
+    if(st.spot.id === 'house'){
+      say('La maison bleue', [
+        'Tiens… la porte n’est pas verrouillée.',
+        'Elle s’ouvre en grinçant — quelqu’un déboule de l’intérieur !!'
+      ], function(){ showdownRun(HOUSE_X); });
+      return;
+    }
+    st.knocks++;
+    if(st.knocks === 1){
+      say('La maison bleue', ['Toc, toc… Personne ne répond.','Pourtant, le rideau a bougé. Quelqu’un vous observe…']);
+    } else if(st.knocks === 2){
+      say('La maison bleue', ['Toc, toc ! Des pas traînants derrière la porte…','« Allez-vous-en ! » grogne une voix.']);
+    } else {
+      if(!st.clueLand){
+        var lm = st.spot.landmark;
+        say('Mme Blain 👵', [
+          'La porte s’entrouvre sur une vieille dame au regard triste…',
+          '« Mac est mon frère, Shérif. Mais il est allé trop loin. »',
+          '« Je l’ai vu rôder près de ' + lm + '… Soyez humain avec lui. »'
+        ], function(){ st.clueLand = true; addClue('Mme Blain : il rôde près de ' + lm + '.'); });
+      } else {
+        say('Mme Blain 👵', ['« Je vous ai tout dit, Shérif. Bonne chasse… et soyez humain. »']);
+      }
+    }
+  }
+  function readNote(){
+    say('📄 Le billet', [
+      '« Il rôde près de ' + st.spot.landmark + '. Faites vite, Shérif. »',
+      '« — Une amie qui voit tout. »'
+    ]);
+  }
+
+  /* ---------- monde / caméra ---------- */
+  var k = 1;
+  function fit(){
+    k = window.innerHeight / 640;
+    svg.style.width = (W*k)+'px';
+    svg.style.height = window.innerHeight+'px';
+    $('rotate-hint').style.display = (window.innerHeight > window.innerWidth) ? 'block' : 'none';
+    camera();
+  }
+  function camera(){
+    var iw = window.innerWidth;
+    var lo = st.cam[0]*k, hi = st.cam[1]*k - iw;
+    var cx;
+    if(hi < lo) cx = (st.cam[0]+st.cam[1])/2*k - iw/2;
+    else cx = Math.max(lo, Math.min(hi, st.px*k - iw/2));
+    svg.style.transform = 'translateX(' + (-cx) + 'px)';
+  }
+  window.addEventListener('resize', fit);
+
+  /* ---------- boucle ---------- */
+  function loop(ts){
+    var dt = Math.min(.05, (ts - st.lastTs)/1000 || 0); st.lastTs = ts;
+    if(st.mode==='play'){
+      var mv = (st.moveR?1:0) - (st.moveL?1:0);
+      if(mv!==0){
+        st.dir = mv;
+        st.px = Math.max(st.bounds[0], Math.min(st.bounds[1], st.px + mv*SPEED*dt));
+        player.classList.add('walking');
+      } else player.classList.remove('walking');
+      player.setAttribute('transform','translate('+st.px.toFixed(1)+','+GROUND_Y+')');
+      pflip.setAttribute('transform', st.dir<0 ? PSL : PS);
+      walkers(dt);
+      if(st.showdown){
+        var mf = $('macblain-flip');
+        if(mf) mf.setAttribute('transform', st.px < DUEL_X ? PSL : PS);
+        if(Math.abs(st.px - DUEL_X) < 115){ startShowdownDuel(); }
+      }
+      camera();
+      proximity();
+    } else player.classList.remove('walking');
+    requestAnimationFrame(loop);
+  }
+
+  /* PNJ qui se promènent (la dame, Sam) */
+  function walkers(dt){
+    if(st.showdown) return;
+    WALKERS.forEach(function(w){
+      var el = $('npc-'+w.id); if(!el) return;
+      var flip = el.querySelector('.npc-flip');
+      var nearPlayer = Math.abs(st.px - w.wx) < 90;
+      if(nearPlayer){
+        el.classList.remove('walking');
+        if(flip) flip.setAttribute('transform', st.px < w.wx ? 'scale(-1,1)' : 'scale(1,1)');
+        var d = w.wx - st.px;
+        if(Math.abs(d) < 50){
+          w.wx += (d<0 ? -1 : 1) * 70 * dt;
+          w.wx = Math.max(w.min, Math.min(w.max, w.wx));
+          el.classList.add('walking');
+        }
+      } else {
+        w.wx += w.dir * w.speed * dt;
+        if(w.wx > w.max){ w.wx = w.max; w.dir = -1; }
+        if(w.wx < w.min){ w.wx = w.min; w.dir = 1; }
+        el.classList.add('walking');
+        if(flip) flip.setAttribute('transform', w.dir<0 ? 'scale(-1,1)' : 'scale(1,1)');
+      }
+      el.setAttribute('transform','translate('+w.wx.toFixed(1)+','+w.y+')');
+      var npc = NPCS.find(function(n){ return n.id===w.id; });
+      if(npc) npc.x = w.wx;
+    });
+  }
+
+  function proximity(){
+    var best = null, bd = 75;
+    if(!st.showdown) NPCS.forEach(function(n){ var d = Math.abs(n.x - st.px); if(d<bd){ bd=d; best={type:'npc', o:n}; } });
+    SPOTS.forEach(function(s){ if(s.id==='house') return;
+      var d = Math.abs(s.x - st.px); if(d<bd){ bd=d; best={type:'spot', o:s}; } });
+    DOORS.forEach(function(o){ var d = Math.abs(o.x - st.px); if(d<bd){ bd=d; best={type:'door', o:o}; } });
+    MSGS.forEach(function(o){ var d = Math.abs(o.x - st.px); if(d<bd){ bd=d; best={type:'msg', o:o}; } });
+    var dk = Math.abs(HOUSE_X - st.px);
+    if(dk<bd){ bd=dk; best={type:'knock', o:{label:'👊 Frapper'}}; }
+    if(st.noteShown){ var dn = Math.abs(NOTE_X - st.px); if(dn<bd){ bd=dn; best={type:'note', o:{label:'📄 Lire'}}; } }
+    st.near = best;
+    var b = $('btn-action');
+    if(best){
+      b.textContent = best.type==='npc' ? '💬 Parler'
+                    : best.type==='spot' ? '🔍 Fouiller'
+                    : best.o.label;
+      b.classList.add('show');
+    } else b.classList.remove('show');
+  }
+
+  /* passer une porte */
+  function useDoor(door){
+    st.mode = 'cine';
+    $('fader').classList.add('show');
+    beep(392,.12,'triangle',.07);
+    setTimeout(function(){
+      st.px = door.to; st.cam = door.zone.cam; st.bounds = door.zone.bounds;
+      st.dir = 1;
+      player.setAttribute('transform','translate('+st.px+','+GROUND_Y+')');
+      pflip.setAttribute('transform', PS);
+      camera();
+      $('fader').classList.remove('show');
+      setTimeout(function(){ st.mode = 'play'; }, 260);
+    }, 300);
+  }
+  function doAction(t){
+    if(t.type==='npc') talk(t.o);
+    else if(t.type==='spot') search(t.o);
+    else if(t.type==='door') useDoor(t.o);
+    else if(t.type==='msg') say(t.o.who, t.o.lines.slice());
+    else if(t.type==='knock') knockHouse();
+    else if(t.type==='note') readNote();
+  }
+
+  /* ---------- dialogues des PNJ ---------- */
+  function talk(npc){
+    var s = st.spot;
+    if(npc.id==='dolly'){
+      say('Dolly 🌸', [
+        'Bonjour Shérif ! Un inconnu au regard mauvais est passé devant le saloon…',
+        'Il est parti ' + ZONE_TXT[s.zone] + ' !'
+      ], function(){ st.clueZone = true; addClue('Dolly : il est parti ' + ZONE_TXT[s.zone] + '.'); });
+    } else if(npc.id==='rosie'){
+      say('La dame à l’ombrelle', [
+        'Oh, Shérif… j’ai eu si peur !',
+        'J’ai entendu du bruit du côté de ' + s.landmark + '.'
+      ], function(){ st.clueLand = true; addClue('La dame : du bruit près de ' + s.landmark + '.'); });
+    } else if(npc.id==='silas'){
+      if(!st.silasTalked){
+        st.silasTalked = true;
+        say('Le vieux Silas 🚬', ['Grmpf. Laissez-moi fumer ma pipe en paix.']);
+      } else {
+        say('Le vieux Silas 🚬', [
+          '…Bon, puisque vous insistez.',
+          'J’ai vu un chapeau noir filer près de ' + s.landmark + '. Maintenant, ouste !'
+        ], function(){ st.clueLand = true; addClue('Silas : un chapeau noir près de ' + s.landmark + '.'); });
+      }
+    } else if(npc.id==='epicier'){
+      say('L’épicier 🥫', [
+        'Bienvenue ! Farine, clous, tabac… tout à prix doux !',
+        'Un client pressé au regard mauvais ? Il a filé ' + ZONE_TXT[s.zone] + ' !'
+      ], function(){ st.clueZone = true; addClue('L’épicier : il a filé ' + ZONE_TXT[s.zone] + '.'); });
+    } else if(npc.id==='sam'){
+      say('Sam', [
+        'On raconte que Mac Blain dégaine plus vite que son ombre…',
+        'Si vous le débusquez : tapez le bouton du duel aussi vite que possible !'
+      ]);
+    }
+  }
+
+  /* ---------- fouille ---------- */
+  function search(spot){
+    if(st.showdown){
+      say('⚔️', ['Plus le temps de fouiller…', 'Mac Blain vous attend sur la place !']);
+      return;
+    }
+    if(spot.id === st.spot.id){
+      say('❗', [
+        'Ça bouge derrière ' + spot.label + '…',
+        'MAC BLAIN jaillit de sa cachette et détale vers la place !'
+      ], function(){ showdownRun(spot.x); });
+    } else {
+      sndBad();
+      var dirTxt = st.spot.x > spot.x ? 'l’EST ➡️' : '⬅️ l’OUEST';
+      say('🔍 Fouille', [
+        'Personne derrière ' + spot.label + '…',
+        'Mais des traces fraîches filent vers ' + dirTxt + ' !'
+      ]);
+    }
+  }
+
+  /* ---------- Mac Blain court vers la place ---------- */
+  function setTownsfolk(hidden){
+    ['npc-sam','npc-rosie'].forEach(function(id){
+      var el = $(id); if(el) el.style.display = hidden ? 'none' : '';
+    });
+  }
+  function showdownRun(fromX){
+    st.mode = 'cine';
+    var mb = $('macblain'), flip = $('macblain-flip');
+    mb.classList.remove('standing');
+    mb.style.display = ''; mb.style.opacity = '1';
+    flip.setAttribute('transform', DUEL_X < fromX ? PSL : PS);
+    beep(880,.12,'square',.08);
+    var dur = Math.max(900, Math.min(3000, Math.abs(DUEL_X-fromX)/550*1000));
+    var t0 = performance.now(), done = false;
+    function finish(){
+      if(done) return; done = true;
+      mb.setAttribute('transform','translate('+DUEL_X+','+MB_Y+')');
+      mb.classList.add('standing');
+      st.showdown = true; st.mode = 'play';
+      setTownsfolk(true);
+      $('objective').textContent = '⚔️ Rejoignez Mac Blain sur la place pour le duel !';
+      toast('😨 Les habitants se mettent à l’abri !', 3000);
+      sndBad();
+    }
+    function run(ts){
+      if(done) return;
+      var p = Math.min(1, (ts-t0)/dur);
+      mb.setAttribute('transform','translate('+(fromX+(DUEL_X-fromX)*p).toFixed(1)+','+MB_Y+')');
+      if(p<1) requestAnimationFrame(run); else finish();
+    }
+    requestAnimationFrame(run);
+    setTimeout(finish, dur+500);
+  }
+  function startShowdownDuel(){
+    st.showdown = false;
+    st.mode = 'duel';
+    $('duel-fill').style.width = '0%';
+    $('duel-msg').innerHTML = 'Il dégaine… <b>Tapez le bouton aussi vite que possible !</b>';
+    $('duel').classList.add('show');
+    startDuel();
+  }
+
+  /* ---------- duel ---------- */
+  var duel = null;
+  function startDuel(){
+    duel = { taps:0, need:8, t:5, over:false };
+    musicDuck(true);
+    beep(880,.15,'square',.08);
+    var iv = setInterval(function(){
+      if(!duel || duel.over){ clearInterval(iv); return; }
+      duel.t -= .1;
+      if(duel.t<=0){ duel.over = true; clearInterval(iv); duelFail(); }
+    },100);
+  }
+  $('btn-fire').addEventListener('pointerdown', function(e){
+    e.preventDefault();
+    if(!duel || duel.over) return;
+    duel.taps++; sndTap();
+    $('duel-fill').style.width = Math.min(100, duel.taps/duel.need*100) + '%';
+    if(duel.taps >= duel.need){ duel.over = true; duelWin(); }
+  });
+  function duelWin(){
+    musicStop();
+    sndWin();
+    $('macblain').style.display = 'none';
+    $('duel-msg').innerHTML = '<b>PAN ! Vous avez été plus rapide !</b>';
+    setTimeout(function(){
+      $('duel').classList.remove('show');
+      var secs = Math.round((Date.now()-st.t0)/1000);
+      var mm = Math.floor(secs/60), ss = secs%60;
+      var fast = secs < 480; // moins de 8 minutes
+      $('victory-stats').innerHTML = 'Capturé en <b>' + mm + ' min ' + (ss<10?'0':'') + ss + ' s</b>' +
+        (st.escapes ? ' — après ' + st.escapes + ' évasion' + (st.escapes>1?'s':'') + ' !' : ' — sans le laisser filer !') +
+        (fast ? '' : '<br>Plus de 8 minutes… le juge refuse de tamponner l’affiche !');
+      $('stamp-g').style.display = fast ? '' : 'none';
+      $('victory').classList.add('show');
+      if(fast) spawnConfetti();
+      st.mode = 'win';
+    }, 900);
+  }
+  function spawnConfetti(){
+    var v = $('victory');
+    var colors = ['#A63A2E','#E8A93F','#6FA3B8','#C94F7C','#E9D6A6','#5E8C4F'];
+    for(var i=0; i<46; i++){
+      var s = document.createElement('span');
+      s.className = 'confetti';
+      s.style.left = (Math.random()*100) + '%';
+      s.style.background = colors[i % colors.length];
+      s.style.animationDuration = (2.4 + Math.random()*2.6) + 's';
+      s.style.animationDelay = (Math.random()*1.8) + 's';
+      v.insertBefore(s, v.firstChild);
+    }
+  }
+  function duelFail(){
+    musicDuck(false);
+    sndBad();
+    $('duel-msg').innerHTML = '<b>Trop lent !</b> Mac Blain s’est enfui…';
+    setTimeout(function(){
+      $('duel').classList.remove('show');
+      escapeTo();
+    }, 1200);
+  }
+
+  /* ---------- fuite de Mac Blain ---------- */
+  function escapeTo(){
+    var old = st.spot;
+    var choices = SPOTS.filter(function(s){ return s.id!==old.id && s.id!=='house'; });
+    st.spot = choices[Math.floor(Math.random()*choices.length)];
+    st.escapes++;
+    st.clueZone = false; st.clueLand = false; st.silasTalked = false;
+    st.clues = []; $('carnet-badge').textContent = '0';
+    refreshTrail();
+    $('objective').textContent = 'Il s’est enfui ! Interrogez de nouveau les habitants…';
+    // il détale depuis la place vers sa nouvelle cachette
+    var mb = $('macblain'), flip = $('macblain-flip');
+    var from = DUEL_X, to = DUEL_X + (st.spot.x > DUEL_X ? 420 : -420);
+    mb.classList.remove('standing');
+    flip.setAttribute('transform', to<from ? PSL : PS);
+    mb.style.display = '';
+    var t0 = performance.now(), done = false;
+    st.mode = 'cine'; st.showdown = false;
+    function finish(){
+      if(done) return; done = true;
+      mb.style.display='none'; mb.style.opacity='1'; st.mode='play';
+      setTownsfolk(false);
+      toast('💨 Mac Blain a filé… il se cache ailleurs !');
+    }
+    function run(ts){
+      if(done) return;
+      var p = Math.min(1, (ts-t0)/1100);
+      var x = from + (to-from)*p;
+      mb.setAttribute('transform','translate('+x.toFixed(1)+','+MB_Y+')');
+      mb.style.opacity = p>.75 ? String(1-(p-.75)/.25) : '1';
+      if(p<1) requestAnimationFrame(run); else finish();
+    }
+    requestAnimationFrame(run);
+    setTimeout(finish, 1700);
+  }
+
+  /* ---------- musique western (WebAudio, mélodie originale) ---------- */
+  var mus = {gain:null, timer:null, nextLoop:0, on:true};
+  var MB_BEAT = .47, MB_BAR = MB_BEAT*4;
+  // mélodie en ré majeur (notes midi + durée en croches, swing)
+  var MELODY = [
+    [69,1],[66,1],[62,2],[66,1],[69,1],[74,2],
+    [76,1],[74,1],[71,2],[69,1],[66,1],[69,2],
+    [67,1],[71,1],[74,2],[71,1],[67,1],[64,2],
+    [66,1],[69,1],[66,2],[64,1],[62,1],[0,2],
+    [69,1],[66,1],[62,2],[66,1],[69,1],[74,2],
+    [76,1],[74,1],[71,2],[69,1],[71,1],[73,2],
+    [74,1],[73,1],[71,1],[69,1],[66,1],[64,1],[66,1],[69,1],
+    [62,3],[0,1],[62,1],[64,1],[66,2],
+    [74,2],[74,1],[76,1],[74,1],[71,1],[69,2],
+    [67,2],[67,1],[69,1],[71,1],[74,1],[71,2],
+    [69,2],[69,1],[71,1],[73,1],[74,1],[76,2],
+    [78,1],[76,1],[74,1],[71,1],[69,1],[66,1],[64,2],
+    [62,1],[66,1],[69,2],[74,1],[71,1],[69,2],
+    [67,1],[71,1],[67,2],[64,1],[62,1],[64,2],
+    [66,1],[69,1],[73,2],[74,1],[76,1],[73,2],
+    [74,4],[0,4]
+  ];
+  var ROOTS = [38,38,43,38, 38,45,38,38, 43,43,38,45, 38,43,45,38]; // basse par mesure
+  var LOOP_BARS = 16, LOOP_DUR = LOOP_BARS*MB_BAR;
+  function eT(ge){ // temps (s) du début d'une croche, avec swing
+    var beat = Math.floor(ge/2), off = ge%2;
+    return beat*MB_BEAT + (off ? MB_BEAT*.58 : 0);
+  }
+  function mtof(m){ return 440*Math.pow(2,(m-69)/12); }
+  function musicInit(){
+    if(mus.gain) return;
+    try{
+      // iOS : ne pas être coupé par l'interrupteur silencieux
+      if(navigator.audioSession) navigator.audioSession.type = 'playback';
+    }catch(e){}
+    try{
+      if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)();
+      mus.gain = actx.createGain(); mus.gain.gain.value = mus.on ? .8 : 0;
+      mus.gain.connect(actx.destination);
+    }catch(e){}
+  }
+  function mvoice(freq,t,dur,type,vol,vib){
+    var o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.value = freq;
+    if(vib){ // vibrato façon harmonica
+      var lf = actx.createOscillator(), lg = actx.createGain();
+      lf.frequency.value = 5.5; lg.gain.value = freq*.014;
+      lf.connect(lg); lg.connect(o.frequency);
+      lf.start(t); lf.stop(t+dur+.05);
+    }
+    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+.015);
+    g.gain.setValueAtTime(vol, t+Math.max(.02,dur-.07));
+    g.gain.exponentialRampToValueAtTime(.0001, t+dur);
+    o.connect(g); g.connect(mus.gain);
+    o.start(t); o.stop(t+dur+.05);
+  }
+  var BANJO = [0,4,7,12,0,7,4,12]; // roulement de banjo (arpège majeur)
+  function scheduleLoop(t0){
+    var ge = 0;
+    MELODY.forEach(function(nd){
+      if(nd[0]>0){
+        var t = t0+eT(ge), dur = eT(ge+nd[1])-eT(ge);
+        mvoice(mtof(nd[0]), t, Math.max(.1,dur*.92), 'triangle', .105, true);
+        mvoice(mtof(nd[0]), t, Math.max(.1,dur*.92), 'square', .03);
+      }
+      ge += nd[1];
+    });
+    for(var bar=0; bar<LOOP_BARS; bar++){
+      var bt = t0 + bar*MB_BAR, r = ROOTS[bar];
+      mvoice(mtof(r),   bt,            MB_BEAT*.85, 'triangle', .14);   // oum
+      mvoice(mtof(r+7), bt+2*MB_BEAT,  MB_BEAT*.85, 'triangle', .13);
+      mvoice(mtof(r+12), bt+MB_BEAT,   MB_BEAT*.3, 'square', .028);     // pah
+      mvoice(mtof(r+19), bt+MB_BEAT,   MB_BEAT*.3, 'square', .024);
+      mvoice(mtof(r+12), bt+3*MB_BEAT, MB_BEAT*.3, 'square', .028);
+      mvoice(mtof(r+19), bt+3*MB_BEAT, MB_BEAT*.3, 'square', .024);
+      for(var e=0;e<8;e++){ // roulement de banjo
+        mvoice(mtof(r+24+BANJO[e]), bt+eT(e), .09, 'sawtooth', .02);
+      }
+      for(var b=0;b<4;b++){ // trot de sabots
+        mvoice(b%2? 620:780, bt+b*MB_BEAT+MB_BEAT*.58, .05, 'sine', .04);
+      }
+    }
+  }
+  function musicTick(){
+    if(!mus.gain || !actx) return;
+    if(actx.currentTime > mus.nextLoop - .9){
+      try{ scheduleLoop(mus.nextLoop); }catch(e){}
+      mus.nextLoop += LOOP_DUR;
+    }
+  }
+  function musicStart(){
+    musicInit();
+    if(!mus.gain || mus.timer) return;
+    try{ if(actx.state==='suspended') actx.resume(); }catch(e){}
+    mus.nextLoop = actx.currentTime + .15;
+    mus.timer = setInterval(musicTick, 250);
+  }
+  function musicDuck(down){
+    if(mus.gain && actx) mus.gain.gain.setTargetAtTime(mus.on ? (down? .18 : .8) : 0, actx.currentTime, .2);
+  }
+  function musicStop(){
+    if(mus.timer){ clearInterval(mus.timer); mus.timer = null; }
+    if(mus.gain && actx) mus.gain.gain.setTargetAtTime(0, actx.currentTime, .4);
+  }
+  $('btn-music').addEventListener('pointerdown', function(e){
+    e.preventDefault();
+    mus.on = !mus.on;
+    this.innerHTML = mus.on ? '&#127925;' : '&#128263;';
+    musicInit();
+    try{ if(actx && actx.state==='suspended') actx.resume(); }catch(err){}
+    if(mus.gain && actx) mus.gain.gain.setTargetAtTime(mus.on ? .8 : 0, actx.currentTime, .1);
+    if(mus.on) musicStart();
+    toast(mus.on ? '🎵 Musique activée' : '🔇 Musique coupée', 1300);
+  });
+
+  /* ---------- entrées ---------- */
+  function hold(btn, prop){
+    btn.addEventListener('pointerdown', function(e){ e.preventDefault(); st[prop]=true; });
+    ['pointerup','pointercancel','pointerleave'].forEach(function(ev){
+      btn.addEventListener(ev, function(){ st[prop]=false; });
+    });
+  }
+  hold($('btn-left'),'moveL'); hold($('btn-right'),'moveR');
+  $('btn-action').addEventListener('pointerdown', function(e){
+    e.preventDefault();
+    if(st.mode!=='play' || !st.near) return;
+    doAction(st.near);
+  });
+  window.addEventListener('keydown', function(e){
+    if(e.key==='ArrowLeft') st.moveL = true;
+    if(e.key==='ArrowRight') st.moveR = true;
+    if(e.key===' ' || e.key==='e' || e.key==='Enter'){
+      if(st.mode==='dialog') nextLine();
+      else if(st.mode==='duel' && duel && !duel.over){
+        duel.taps++; $('duel-fill').style.width = Math.min(100,duel.taps/duel.need*100)+'%';
+        if(duel.taps>=duel.need){ duel.over=true; duelWin(); }
+      }
+      else if(st.mode==='play' && st.near){ doAction(st.near); }
+      e.preventDefault();
+    }
+  });
+  window.addEventListener('keyup', function(e){
+    if(e.key==='ArrowLeft') st.moveL = false;
+    if(e.key==='ArrowRight') st.moveR = false;
+  });
+
+  function aideNow(){
+    if(st.showdown) return '📍 Rejoignez Mac Blain sur la place, entre le saloon et l’abreuvoir, pour le duel !';
+    if(st.clueZone && st.clueLand) return '📍 Suivez les empreintes : elles mènent près de ' + st.spot.landmark + ' !';
+    if(st.clueZone) return '📍 Cherchez ' + ZONE_TXT[st.spot.zone] + '. Un autre témoin connaît le lieu exact (la dame, Silas…).';
+    if(st.clueLand) return '📍 On parle de ' + st.spot.landmark + '… Confirmez la direction auprès de Dolly ou de l’épicier.';
+    return '📍 Commencez par interroger les habitants : Dolly au comptoir du saloon, la dame et Sam sur la place.';
+  }
+  $('btn-aide').addEventListener('pointerdown', function(e){
+    e.preventDefault();
+    if(st.mode==='duel' || st.mode==='cine') return;
+    $('aide-now').textContent = aideNow();
+    $('aide').classList.add('show');
+  });
+  $('btn-aide-close').addEventListener('pointerdown', function(e){
+    e.preventDefault(); $('aide').classList.remove('show');
+  });
+  $('aide').addEventListener('pointerdown', function(e){
+    if(e.target===$('aide')) $('aide').classList.remove('show');
+  });
+
+  $('btn-carnet').addEventListener('pointerdown', function(e){
+    e.preventDefault(); if(st.mode!=='play' && st.mode!=='dialog') return;
+    renderCarnet(); $('carnet').classList.add('show');
+  });
+  $('btn-carnet-close').addEventListener('pointerdown', function(e){
+    e.preventDefault(); $('carnet').classList.remove('show');
+  });
+  $('carnet').addEventListener('pointerdown', function(e){
+    if(e.target===$('carnet')) $('carnet').classList.remove('show');
+  });
+
+  $('btn-play').addEventListener('pointerdown', function(e){
+    e.preventDefault();
+    $('intro').classList.remove('show');
+    st.mode = 'play'; st.t0 = Date.now();
+    beep(523,.1,'triangle',.08);
+    musicStart();
+    toast('🤠 Allez parler à Dolly, au saloon !', 3200);
+  });
+  $('btn-replay').addEventListener('pointerdown', function(){ location.reload(); });
+  $('btn-replay2').addEventListener('pointerdown', function(){ location.reload(); });
+  $('btn-quit').addEventListener('pointerdown', function(e){
+    e.preventDefault();
+    $('victory').classList.remove('show');
+    $('endgame').classList.add('show');
+    st.mode = 'end';
+  });
+
+  /* ---------- go ---------- */
+  // au premier geste, réveiller l'audio (politique d'autoplay mobile)
+  window.addEventListener('pointerdown', function wake(){
+    try{ if(actx && actx.state==='suspended') actx.resume(); }catch(e){}
+  });
+  // 1 partie sur 5 : Mac Blain se cache dans la maison bleue
+  if(Math.random() < .2){
+    st.spot = SPOTS.find(function(s){ return s.id==='house'; });
+  } else {
+    var outs = SPOTS.filter(function(s){ return s.id!=='house'; });
+    st.spot = outs[Math.floor(Math.random()*outs.length)];
+  }
+  fit();
+  requestAnimationFrame(loop);
+  window.__g = {st:st, SPOTS:SPOTS, NPCS:NPCS, DOORS:DOORS, MSGS:MSGS, talk:talk, search:search,
+    proximity:proximity, camera:camera, nextLine:nextLine, escapeTo:escapeTo, useDoor:useDoor,
+    walkers:walkers, showdownRun:showdownRun, startShowdownDuel:startShowdownDuel};
+})();
+</script>
+
+</body>
+</html>
