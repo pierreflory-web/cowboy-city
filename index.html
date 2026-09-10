@@ -2117,6 +2117,7 @@
   </div>
 </div>
 
+<script src="https://pierreflory-web.github.io/jeux/points.js"></script>
 <script>
 (function(){
   'use strict';
@@ -2535,6 +2536,12 @@
       $('victory').classList.add('show');
       if(fast) spawnConfetti();
       st.mode = 'win';
+      if(window.MesJeux){
+        var lignes = [[50,'Victoire : Mac Blain capturé !']];
+        if(fast) lignes.push([20,'Capturé en moins de 8 minutes']);
+        if(!st.escapes) lignes.push([10,'Sans aucune évasion']);
+        MesJeux.award('cowboy', lignes);
+      }
     }, 900);
   }
   function spawnConfetti(){
