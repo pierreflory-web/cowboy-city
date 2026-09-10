@@ -2540,7 +2540,7 @@
         var lignes = [[50,'Victoire : Mac Blain capturé !']];
         if(fast) lignes.push([20,'Capturé en moins de 8 minutes']);
         if(!st.escapes) lignes.push([10,'Sans aucune évasion']);
-        MesJeux.award('cowboy', lignes);
+        MesJeux.award('cowboy', lignes, {secs: secs});
       }
     }, 900);
   }
